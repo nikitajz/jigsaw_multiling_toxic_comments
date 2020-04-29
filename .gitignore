@@ -4,6 +4,10 @@
 *.csv
 *.pickle
 data/*
+.run_cache/*
+random/*
+.vector_cache
+checkpoint.pt
 
 # IDEs
 .DS_Store
@@ -128,4 +132,3 @@ dmypy.json
 
 # pytype static type analyzer
 .pytype/
-
