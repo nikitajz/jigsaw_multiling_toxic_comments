@@ -5,12 +5,12 @@ import torch.optim as optim
 
 
 class CNNModel(nn.Module):
-    def __init__(self, vocab_size, emb_size, kernel_sizes, num_channels, hidden_size, dropout_p=0.5, pad_idx=1):
+    def __init__(self, emb_vectors, kernel_sizes, num_channels, hidden_size, dropout_p=0.5, pad_idx=1):
         super().__init__()
-        self.emb = nn.Embedding(vocab_size, emb_size, pad_idx)
+        self.emb = nn.Embedding.from_pretrained(emb_vectors, padding_idx=pad_idx, sparse=True)
         self.convs = nn.ModuleList()
-        # in_channels = emb_size
-        in_channels = num_channels
+        in_channels = emb_vectors.shape[1]
+        # in_channels = num_channels
         for ks in kernel_sizes:
             self.convs.append(
                 nn.Sequential(

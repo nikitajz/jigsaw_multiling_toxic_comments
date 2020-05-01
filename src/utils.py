@@ -31,7 +31,7 @@ def save_scores_to_file(scores, filepath, precision=5):
         Precision to round score to, by default 5
     """    
     with open(filepath, 'w') as f:
-        w = csv.writer(f)
+        w = csv.writer(f, delimiter='\t')
         for key, val in scores.items():
             val = round(val, precision) if precision else val
             w.writerow([key, val])
@@ -53,7 +53,7 @@ def load_scores_from_file(filepath):
     """    
     scores = {}
     with open(filepath, 'r') as f:
-        csv_reader = csv.reader(f)
+        csv_reader = csv.reader(f, delimiter='\t')
         for key, val in csv_reader:
             scores[key] = float(val)
     return scores
