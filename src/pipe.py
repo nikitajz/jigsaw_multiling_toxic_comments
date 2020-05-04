@@ -1,7 +1,9 @@
 import logging
 
+import pandas as pd
 import numpy as np
 import torch
+from torchtext.data import Iterator
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score       
 
 logger = logging.getLogger()
@@ -80,15 +82,15 @@ def train_model(model, criterion, optimizer, train_loader, valid_loader, patienc
         model.train()
         for data, target in train_loader:
             optimizer.zero_grad()
-            preds = model(data)
+            preds = model(data, "en")
             loss = criterion(preds, target.float())
             loss.backward()
             optimizer.step()
             train_losses_epoch.append(loss.item())
 
         model.eval()
-        for data, target in valid_loader:
-            preds = model(data)
+        for data, lang, target in valid_loader:
+            preds = model(data, lang)
             loss = criterion(preds, target.float())
             valid_losses_epoch.append(loss.item())
             val_acc += torch.eq(torch.round(torch.sigmoid(preds)).long(), target).sum().item()
@@ -137,15 +139,16 @@ def evaluate_performance(model, test_iter, loss_fn, print_metrics=False):
     y_pred_l = []
     model.eval()
     for batch in test_iter:
-        x = batch.comment_text
-        y = batch.toxic
+        data = batch.comment_text
+        lang = batch.lang
+        target = batch.toxic
 
-        preds = model(x)
-        loss = loss_fn(preds, y.float())
+        preds = model(data, lang)
+        loss = loss_fn(preds, target.float())
         test_loss += loss.item()
         preds = torch.round(torch.sigmoid(preds)).long()
-        acc += torch.eq(preds, y).sum().item()
-        y_true_l.append(y)
+        acc += torch.eq(preds, target).sum().item()
+        y_true_l.append(target)
         y_pred_l.append(preds)
 
     y_true = torch.cat(y_true_l, 0).cpu().detach().numpy()
@@ -166,3 +169,33 @@ def evaluate_performance(model, test_iter, loss_fn, print_metrics=False):
             logger.info(f'{k.capitalize()}: {v:.3f}')
 
     return scores
+
+def get_predictions(model, train_iter):
+    ids = []
+    toxic = []
+    for idx, text, lang in train_iter:
+        idx.append(idx)
+        pred = model(text, lang)
+        toxic.append(pred)
+
+    return pd.DataFrame(list(zip(ids, toxic)), columns=["id", "toxic"]).sort_values(by="id")
+
+
+class MultilangIter:
+    def __init__(self, iter_list):
+        """Metaiterator to chain multiple per-language iterators.
+
+        Parameters
+        ----------
+        iter_list : [list]
+            Sequence of torchtext iterators.
+        """
+        self.iters = iter_list
+
+    def __iter__(self):
+        for it in self.iters:
+            for batch in it:
+                yield batch
+
+    def __len__(self):
+        return sum(len(it) for it in self.iters)

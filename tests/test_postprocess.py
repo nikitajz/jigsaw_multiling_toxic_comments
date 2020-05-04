@@ -1,5 +1,5 @@
 from torchtext.vocab import Vocab
-from src.train_model import get_pad_to_min_len_fn
+from src.run import get_pad_to_min_len_fn
 
 
 def test_postprocess():
