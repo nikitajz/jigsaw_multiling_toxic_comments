@@ -1,11 +1,16 @@
 import csv
 import os
+import dill
 import random
 import numpy as np
+from pathlib import Path
+
 import torch
+from torchtext.data import Dataset
 
 import logging
-logger = logging.getLogger()
+
+logger = logging.getLogger(__name__)
 
 def set_seed_everywhere(seed, cuda=True):
     random.seed(seed)
@@ -58,4 +63,18 @@ def load_scores_from_file(filepath):
             scores[key] = float(val)
     return scores
     
-        
+def save_dataset(dataset, path):
+    if not isinstance(path, Path):
+        path = Path(path)
+    path.mkdir(parents=True, exist_ok=True)
+    logger.debug(f'Saving dataset to path {path}')
+    torch.save(dataset.examples, path/"examples.pkl", pickle_module=dill)
+    torch.save(dataset.fields, path/"fields.pkl", pickle_module=dill)
+
+def load_dataset(path):
+    if not isinstance(path, Path):
+        path = Path(path)
+    logger.debug(f'Loading preprocessed dataset from path: {path}')
+    examples = torch.load(path/"examples.pkl", pickle_module=dill)
+    fields = torch.load(path/"fields.pkl", pickle_module=dill)
+    return Dataset(examples, fields)

@@ -4,9 +4,10 @@
 *.csv
 *.pickle
 data/*
-.run_cache/*
 random/*
+notebooks/*
 .vector_cache
+.run_cache/*
 checkpoint.pt
 
 # IDEs

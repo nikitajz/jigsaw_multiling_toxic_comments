@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from src.cnn import CNNMultiling
-from src.pipe import MultilangIter, evaluate_performance, get_predictions, load_data_iters, train_model
+from src.pipe import MultilangIter, evaluate_performance, get_predictions, create_data_iters, train_model
 from src.utils import set_seed_everywhere, save_scores_to_file
 
 
@@ -20,9 +20,9 @@ class Config:
 
     learning_rate = 0.005
     weight_decay = 0.0005
-    batch_size_train = 64
-    batch_size_test = 256
-    n_epochs = 1
+    batch_size_train = 128
+    batch_size_test = 128
+    n_epochs = 20
 
     kernel_sizes = [3, 4, 5]
     dropout = 0.5
@@ -43,10 +43,15 @@ class Config:
     train_txc_path = data_path/'jigsaw-toxic-comment-train.csv'
     # data from second competition. Civil Comments dataset with additional labels.
     train_ub_path = data_path/'jigsaw-unintended-bias-train.csv'
-    train_j_path = data_path/'jigsaw-joint-train.csv'
+    train_joint_path = data_path/'jigsaw-joint-train.csv'
+
+    train_path = train_joint_path #train_txc_path # use both datasets combined
     val_path = data_path/'validation.csv'
     test_path = data_path/'test.csv'
     val_scores_path = 'val_scores.tsv'
+
+    cache_datasets = True
+    use_cached_datasets = True
 
     val_langs = ['es', 'it', 'tr']
     test_langs = ['tr', 'ru', 'it', 'fr', 'pt', 'es']
@@ -61,25 +66,25 @@ if __name__ == '__main__':
     set_seed_everywhere(cfg.SEED, True)
     device = torch.device(cfg.device if torch.cuda.is_available() else 'cpu')
 
-    torch.Tensor.__repr__ = torch.Tensor.__str__ = lambda self: f'Shape:{self.shape.__str__()[11:-1]}'
+    # torch.Tensor.__repr__ = torch.Tensor.__str__ = lambda self: f'Shape:{self.shape.__str__()[11:-1]}'
 
     logger.info(f'Using device: [{device}]')
 
-    train_iter, val_iter, test_iter, text_vocabs = load_data_iters(cfg, cache=False)
+    train_iter, val_iter, test_iter, text_vocabs = create_data_iters(cfg, cache=cfg.cache_datasets, load_cached=cfg.use_cached_datasets)
 
     ## Sanity check
-    ex_train = next(iter(train_iter))
+    # ex_train = next(iter(train_iter))
 
-    ex_val_comb = next(iter(val_iter))    
+    # ex_val_comb = next(iter(val_iter))    
 
-    ex_test_comb = next(iter(test_iter))
+    # ex_test_comb = next(iter(test_iter))
 
     ## Load vectors & init model
 
     logger.debug(f'Extracting pre-trained vectors')
-    emb_vectors_dict = {lang: vocab.vectors for lang, vocab in text_vocabs.items()}
+    vectors_dict = {lang: vocab.vectors for lang, vocab in text_vocabs.items()}
 
-    model = CNNMultiling(emb_vectors_dict=emb_vectors_dict, 
+    model = CNNMultiling(vectors_dict=vectors_dict,
                          kernel_sizes=cfg.kernel_sizes,
                          num_channels=cfg.num_channels, 
                          hidden_size=cfg.hidden_dim, 
@@ -104,5 +109,8 @@ if __name__ == '__main__':
     save_scores_to_file(val_scores, cfg.val_scores_path)
 
     model.to(device)
+    
+    logger.info('Predicting for test data')
     pred_df = get_predictions(model, test_iter)
+    logger.info('Saving the predictions to the file')
     pred_df.to_csv("submit.csv", index=False)
