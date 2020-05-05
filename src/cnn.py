@@ -2,20 +2,22 @@ import logging
 
 import torch
 import torch.nn as nn
+import torch.nn.modules as tm
 import torch.nn.functional as F
 import torch.optim as optim
 
 
 class CNNMultiling(nn.Module):
-    def __init__(self, emb_vectors_dict, kernel_sizes, num_channels, hidden_size, dropout_p=0.5, pad_idx=1):
+    def __init__(self, vectors_dict, kernel_sizes, num_channels, hidden_size, dropout_p=0.5, pad_idx=1):
         super().__init__()
         self.logger = logging.getLogger()
         self.cur_lang = None # track last language used for embeddings, required for memory optimization
-        self.embs = {}
-        in_channels = emb_vectors_dict['en'].shape[1]
-        for lang, vect in emb_vectors_dict.items():
+        in_channels = vectors_dict['en'].shape[1]
+        emb_dict = {}
+        for lang, vect in vectors_dict.items():
             assert in_channels == vect.shape[1], f"Vector for language [{lang}] has shape {vect.shape[1]}, but should be {in_channels}"
-            self.embs[lang] = nn.Embedding.from_pretrained(emb_vectors_dict[lang], padding_idx=pad_idx, freeze=True, sparse=True)
+            emb_dict[lang] = nn.Embedding.from_pretrained(vectors_dict[lang], padding_idx=pad_idx, freeze=True, sparse=True)
+        self.embs = tm.ModuleDict(emb_dict)
         self.convs = nn.ModuleList()
         # in_channels = num_channels
         for ks in kernel_sizes:

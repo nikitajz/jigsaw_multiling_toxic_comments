@@ -4,16 +4,17 @@ import dill
 import pandas as pd
 import numpy as np
 import spacy
-import torch
+from pathlib import Path
 
+import torch
+import torch.nn as nn # "cuda" attribute appears only after importing torch.nn #283
 from torchtext.data import Field, LabelField, RawField
 from torchtext.data import BucketIterator, Iterator
 from torchtext.data import TabularDataset
 from torchtext.vocab import Vectors
 
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
-from pathlib import Path
-import pickle
+from src.utils import load_dataset, save_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -100,18 +101,18 @@ def train_model(model, criterion, optimizer, train_loader, valid_loader, patienc
             loss = criterion(preds, target.float())
             loss.backward()
             optimizer.step()
-            train_losses_epoch.append(loss.item())
+            train_losses_epoch.append(loss.cpu().detach().item())
 
         model.eval()
-        for data, lang, target in valid_loader:
-            preds = model(data, lang)
-            loss = criterion(preds, target.float())
-            valid_losses_epoch.append(loss.item())
-            val_acc += torch.eq(torch.round(torch.sigmoid(preds)
-                                            ).long(), target).sum().item()
+        with torch.no_grad():
+            for (x, lang), target in valid_loader:
+                preds = model(x, lang)
+                loss = criterion(preds, target.float())
+                valid_losses_epoch.append(loss.item())
+                val_acc += torch.eq(torch.round(torch.sigmoid(preds)).long(), target).sum().cpu().detach().item()
 
-        train_loss_epoch_avg = np.mean(train_losses_epoch).item()
-        valid_loss_epoch_avg = np.mean(valid_losses_epoch).item()
+        train_loss_epoch_avg = np.mean(train_losses_epoch)
+        valid_loss_epoch_avg = np.mean(valid_losses_epoch)
 
         epoch_len = len(str(n_epochs))
 
@@ -148,27 +149,25 @@ def evaluate_performance(model, test_iter, loss_fn, print_metrics=False):
 
     acc = 0
     test_loss = 0.0
-    test_size = len(test_iter.dataset)
+    test_size = len(test_iter)
     y_true_l = []
     y_pred_l = []
     model.eval()
-    for batch in test_iter:
-        data = batch.comment_text
-        lang = batch.lang
-        target = batch.toxic
+    with torch.no_grad():
+        for (x, lang), target in test_iter:
 
-        preds = model(data, lang)
-        loss = loss_fn(preds, target.float())
-        test_loss += loss.item()
-        preds = torch.round(torch.sigmoid(preds)).long()
-        acc += torch.eq(preds, target).sum().item()
-        y_true_l.append(target)
-        y_pred_l.append(preds)
+            preds = model(x, lang)
+            loss = loss_fn(preds, target.float())
+            test_loss += loss.item()
+            preds = torch.round(torch.sigmoid(preds)).long()
+            acc += torch.eq(preds, target).sum().cpu().detach().item()
+            y_true_l.append(target)
+            y_pred_l.append(preds)
 
-    y_true = torch.cat(y_true_l, 0).cpu().detach().numpy()
-    y_pred = torch.cat(y_pred_l, 0).cpu().detach().numpy()
-    test_loss /= test_size
-    acc /= float(test_size)
+        y_true = torch.cat(y_true_l, 0).cpu().detach().numpy()
+        y_pred = torch.cat(y_pred_l, 0).cpu().detach().numpy()
+        test_loss /= test_size
+        acc /= float(test_size)
 
     scores = {}
     # metrics['loss'] = test_loss
@@ -185,15 +184,22 @@ def evaluate_performance(model, test_iter, loss_fn, print_metrics=False):
     return scores
 
 
-def get_predictions(model, train_iter):
-    ids = []
-    toxic = []
-    for idx, text, lang in train_iter:
-        idx.append(idx)
-        pred = model(text, lang)
-        toxic.append(pred)
+def get_predictions(model, test_iter):
+    model.eval()
+    ids_l = []
+    pred_l = []
+    with torch.no_grad():
+        for (idx, text, lang), _ in test_iter:
+            
+            ids_l.append(idx)
+            y_pred = torch.sigmoid(model(text, lang))
+            pred_l.append(y_pred)
 
-    return pd.DataFrame(list(zip(ids, toxic)), columns=["id", "toxic"]).sort_values(by="id")
+    pred_df = pd.DataFrame(
+        {"id": torch.cat(ids_l, 0).cpu().detach().numpy(),
+         "toxic": torch.cat(pred_l, 0).cpu().detach().numpy()}
+        ).sort_values(by="id")
+    return pred_df
 
 
 class MultilangIter:
@@ -216,21 +222,26 @@ class MultilangIter:
         return sum(len(it) for it in self.iters)
 
 
-def load_data_iters(conf, cache=False, load_cached=False):
+def create_data_iters(conf, cache=False, load_cached=False):
+    device = torch.device(
+        conf.device if torch.cuda.is_available() else 'cpu')
+
     cache_dir = Path(conf.data_path)/"cache"
-    cache_dir.mkdir(exist_ok=True)
+    
+    TEXT_LNG = {}
+    val_fields_dict = {}
+    val_ds_dict = {}
+
+    test_fields_dict = {}
+    test_ds_dict = {}
 
     if not load_cached:
-        device = torch.device(
-            conf.device if torch.cuda.is_available() else 'cpu')
-
         min_len_padding = get_pad_to_min_len_fn(
             min_length=max(conf.kernel_sizes))
 
         spacy.load('en_core_web_sm')
         stopwords_en = spacy.lang.en.stop_words.STOP_WORDS
 
-        TEXT_LNG = {}
         vectors_dict = {}
 
         ### train ###
@@ -257,16 +268,9 @@ def load_data_iters(conf, cache=False, load_cached=False):
         ]
 
         logger.debug('Loading train dataset')
-        train_joint_ds = TabularDataset(path=conf.train_txc_path, format='csv', skip_header=True,
+        train_joint_ds = TabularDataset(path=conf.train_path, 
+                                        format='csv', skip_header=True,
                                         fields=train_j_datafields)
-
-        train_iter = Iterator(train_joint_ds,
-                              batch_size=conf.batch_size_train,
-                              sort=False,
-                              sort_within_batch=True,
-                              sort_key=lambda x: len(x.comment_text),
-                              repeat=True, train=True,
-                              device=device)
 
         logger.info('Building train (en) vocabulary')
         vectors_dict[lang] = Vectors(name=conf.vectors.format(lang), cache=conf.vectors_cache)
@@ -282,16 +286,11 @@ def load_data_iters(conf, cache=False, load_cached=False):
 
         ID = Field(sequential=False, use_vocab=False, batch_first=True, is_target=False)
         LANG = RawField()
-
-        val_fields_dict = {}
-        val_ds_dict = {}
-        val_iter_dict = {}
+        TARGET_VAL = LabelField(batch_first=True, use_vocab=False,
+                                is_target=True, dtype=torch.long)
 
         ### test ###
 
-        test_fields_dict = {}
-        test_ds_dict = {}
-        test_iter_dict = {}
         for lang in conf.test_langs:
             tokenize_str = "spacy" if lang not in conf.tokenizer_exception_langs else "toktok"
             TEXT_LNG[lang] = Field(sequential=True, use_vocab=True, lower=True, batch_first=True,
@@ -308,20 +307,12 @@ def load_data_iters(conf, cache=False, load_cached=False):
                                                 filter_pred=lambda ex: ex.lang == lang)
             logger.debug(f'Dataset for language [{lang}] size: {len(test_ds_dict[lang])}')
 
-            test_iter_dict[lang] = Iterator(test_ds_dict[lang],
-                                            batch_size=conf.batch_size_test,
-                                            sort=False,
-                                            sort_within_batch=False,
-                                            repeat=False,
-                                            train=False,
-                                            device=device)
-
             if lang in conf.val_langs:
                 val_fields_dict[lang] = [
                     ("idx", None),
                     ("comment_text", TEXT_LNG[lang]),
                     ("lang", LANG),
-                    ("toxic", TARGET)
+                    ("toxic", TARGET_VAL)
                 ]
                 logger.info(f'Creating validation dataset for language: [{lang}]')
                 val_ds_dict[lang] = TabularDataset(path=conf.val_path, format='csv',
@@ -329,14 +320,6 @@ def load_data_iters(conf, cache=False, load_cached=False):
                                                    filter_pred=lambda ex: ex.lang == lang
                                                    )
                 logger.debug(f'Dataset for language [{lang}] has size: {len(val_ds_dict[lang])}')
-
-                val_iter_dict[lang] = Iterator(val_ds_dict[lang],
-                                               batch_size=conf.batch_size_train,
-                                               sort=False,
-                                               sort_within_batch=False,
-                                               repeat=False,
-                                               train=False,
-                                               device=device)
 
             logger.info(f'Building vocabulary for language [{lang}]')
             vectors_dict[lang] = Vectors(
@@ -357,22 +340,56 @@ def load_data_iters(conf, cache=False, load_cached=False):
                 )
 
         if cache:
+            cache_dir.mkdir(exist_ok=True)
             logger.info("Saving iterators to cache")
-            torch.save(train_iter, cache_dir/"train_iter.pkl", pickle_module=dill)
+            save_dataset(train_joint_ds, cache_dir/"train_dataset")
             for lang in conf.val_langs:
-                torch.save(val_iter_dict[lang],   cache_dir/f"val_{lang}_iter.pkl", pickle_module=dill)
+                save_dataset(val_ds_dict[lang], cache_dir/f"val_{lang}_dataset")
             for lang in conf.test_langs:
-                torch.save(test_iter_dict,  cache_dir/f"test_{lang}_iter.pkl", pickle_module=dill)
-            torch.save(TEXT_LNG,   cache_dir/"TEXT_LNG.pkl", pickle_module=dill)
+                save_dataset(test_ds_dict[lang], cache_dir/f"test_{lang}_dataset")
+            torch.save(TEXT_LNG, cache_dir/"TEXT_LNG.pkl", pickle_module=dill)
 
     else:
+        #TODO: check if data exists
         logger.info("Loading iterators from cache")
-        train_iter = torch.load(cache_dir/"train_iter.pkl", pickle_module=dill)
+        train_joint_ds = load_dataset(cache_dir/"train_dataset")
         for lang in conf.val_langs:
-            val_iter_dict[lang] = torch.load(cache_dir/f"val_{lang}_iter.pkl", pickle_module=dill)
+            val_ds_dict[lang] = load_dataset(cache_dir/f"val_{lang}_dataset")
         for lang in conf.test_langs:
-            test_iter_dict = torch.load(cache_dir/f"test_{lang}_iter.pkl", pickle_module=dill)
+            test_ds_dict[lang] = load_dataset(cache_dir/f"test_{lang}_dataset")
         TEXT_LNG = torch.load(cache_dir/"TEXT_LNG.pkl", pickle_module=dill)
+
+    # create iterators
+    logger.info('Creating iterators')
+    val_iter_dict = {}
+    test_iter_dict = {}
+
+    train_iter = Iterator(train_joint_ds,
+                            batch_size=conf.batch_size_train,
+                            sort=False,
+                            sort_within_batch=True,
+                            sort_key=lambda x: len(x.comment_text),
+                            repeat=False,
+                            train=True,
+                            device=device)
+
+    for lang in conf.test_langs:
+        test_iter_dict[lang] = Iterator(test_ds_dict[lang],
+                                batch_size=conf.batch_size_test,
+                                sort=False,
+                                sort_within_batch=False,
+                                repeat=False,
+                                train=False,
+                                device=device)
+
+    for lang in conf.val_langs:
+        val_iter_dict[lang] = Iterator(val_ds_dict[lang],
+                                        batch_size=conf.batch_size_train,
+                                        sort=False,
+                                        sort_within_batch=False,
+                                        repeat=False,
+                                        train=False,
+                                        device=device)
 
     val_iter = MultilangIter(val_iter_dict.values())
     test_iter = MultilangIter(test_iter_dict.values())
