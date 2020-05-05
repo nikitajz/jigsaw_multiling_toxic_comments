@@ -15,7 +15,7 @@ class CNNMultiling(nn.Module):
         in_channels = emb_vectors_dict['en'].shape[1]
         for lang, vect in emb_vectors_dict.items():
             assert in_channels == vect.shape[1], f"Vector for language [{lang}] has shape {vect.shape[1]}, but should be {in_channels}"
-            self.embs[lang] = nn.Embedding.from_pretrained(emb_vectors_dict[lang], padding_idx=pad_idx, freeze=True, sparse=False)
+            self.embs[lang] = nn.Embedding.from_pretrained(emb_vectors_dict[lang], padding_idx=pad_idx, freeze=True, sparse=True)
         self.convs = nn.ModuleList()
         # in_channels = num_channels
         for ks in kernel_sizes:

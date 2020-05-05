@@ -9,14 +9,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-# from torchtext import datasets
-from torchtext.data import Field, LabelField, RawField
-from torchtext.data import BucketIterator, Iterator
-from torchtext.data import TabularDataset
-from torchtext.vocab import Vectors
-
 from src.cnn import CNNMultiling
-from src.pipe import MultilangIter, evaluate_performance, get_predictions, train_model
+from src.pipe import MultilangIter, evaluate_performance, get_predictions, load_data_iters, train_model
 from src.utils import set_seed_everywhere, save_scores_to_file
 
 
@@ -58,22 +52,9 @@ class Config:
     test_langs = ['tr', 'ru', 'it', 'fr', 'pt', 'es']
     tokenizer_exception_langs = ['ru', 'tr']
 
-def get_pad_to_min_len_fn(min_length):
-    def pad_to_min_len(batch, vocab, min_length=min_length):
-        pad_idx = vocab.stoi['<pad>']
-        for idx, ex in enumerate(batch):
-            if len(ex) < min_length:
-                batch[idx] = ex + [pad_idx] * (min_length - len(ex))
-        return batch
-    return pad_to_min_len
-
-def preprocess(tokens):
-    pass
-    return tokens
-
 
 if __name__ == '__main__':
-    logger = logging.getLogger()
+    logger = logging.getLogger(__name__)
     logging.basicConfig(level='DEBUG')
     
     cfg = Config()
@@ -84,158 +65,7 @@ if __name__ == '__main__':
 
     logger.info(f'Using device: [{device}]')
 
-    min_len_padding = get_pad_to_min_len_fn(min_length=max(cfg.kernel_sizes))
-
-    spacy.load('en_core_web_sm')
-    stopwords_en = spacy.lang.en.stop_words.STOP_WORDS
-
-    TEXT_LNG = {}
-    vectors_dict = {}
-
-    ## train ##
-    lang = "en"
-    TEXT_LNG[lang] = Field(sequential=True, use_vocab=True, lower=True, tokenize='spacy',
-                #  preprocessing=preprocess,
-                 batch_first=True, postprocessing=min_len_padding,
-                 stop_words=stopwords_en
-                 )
-    # LabelField doesn't work because is_target=True is hardcoded there
-    # LABEL = Field(sequential=False, use_vocab=False, batch_first=True, is_target=False,  dtype=torch.float)
-    TARGET = LabelField(batch_first=True, use_vocab=False, is_target=True, dtype=torch.float)
-
-    train_j_datafields = [
-        ("id", None),  # ignore field
-        ("comment_text", TEXT_LNG[lang]),
-        ("toxic", TARGET),
-        ("severe_toxic", None), ("threat", None),
-        ("obscene", None), ("insult", None),
-        ("identity_hate", None)
-        # ("severe_toxic", LABEL), ("threat", LABEL), ("obscene", LABEL), ("insult", LABEL), ("identity_hate", LABEL)
-    ]
-
-    logger.debug('Loading train dataset')
-    train_joint_ds = TabularDataset(path=cfg.train_txc_path, format='csv', skip_header=True,
-                                    fields=train_j_datafields)
-
-    train_iter = Iterator(train_joint_ds, 
-                          batch_size=cfg.batch_size_train, 
-                          sort=False, 
-                          sort_within_batch=True, 
-                          sort_key=lambda x: len(x.comment_text),
-                          repeat=True, train=True,
-                          device=device)
-
-
-    logger.info('Building train (en) vocabulary')
-    vectors_dict[lang] = Vectors(name=cfg.vectors.format(lang), cache=cfg.vectors_cache)
-    TEXT_LNG[lang].build_vocab(
-        train_joint_ds,
-        max_size=cfg.vocab_size,
-        min_freq=cfg.min_freq,
-        vectors=vectors_dict[lang]
-    )
-
-    ## validation ##
-
-    ID = Field(sequential=False, use_vocab=False, batch_first=True, is_target=False) #dtype=torch.long, 
-    LANG = RawField()
-
-    val_fields_dict = {}
-    val_ds_dict = {}
-    val_iter_dict = {}
-    # for lang in cfg.val_langs:
-    #     tokenize_str = "spacy" if lang not in cfg.tokenizer_exception_langs else "toktok"
-    #     TEXT_LNG[lang] = Field(sequential=True, use_vocab=True, lower=True, batch_first=True,
-    #                         tokenize=tokenize_str, tokenizer_language=lang)
-
-        
-    #     val_fields_dict[lang] = [
-    #             ("idx", None),
-    #             ("comment_text", TEXT_LNG[lang]),
-    #             ("lang", LANG),
-    #             ("toxic", TARGET)
-    #     ]
-    #     logger.info(f'Creating validation dataset for language: [{lang}]')
-    #     val_ds_dict[lang] = TabularDataset(path=cfg.val_path, format='csv',
-    #                             fields=val_fields_dict[lang], skip_header=True,
-    #                             filter_pred=lambda ex: ex.lang == lang
-    #                             )
-    #     logger.debug(f'Dataset for language [{lang}] has size: {len(val_ds_dict[lang])}')
-        
-    #     val_iter_dict[lang] = Iterator(val_ds_dict[lang], batch_size=16, device=device,
-    #                         sort=False, sort_within_batch=False, repeat=False, train=False)
-
-    ## test ##
-
-    test_fields_dict = {}
-    test_ds_dict = {}
-    test_iter_dict = {}
-    for lang in cfg.test_langs:
-        # if lang not in TEXT_LNG.keys():
-        tokenize_str = "spacy" if lang not in cfg.tokenizer_exception_langs else "toktok"
-        TEXT_LNG[lang] = Field(sequential=True, use_vocab=True, lower=True, batch_first=True,
-                                tokenize=tokenize_str, tokenizer_language=lang)
-
-        test_fields_dict[lang] = [
-                ("idx", ID),
-                ("comment_text", TEXT_LNG[lang]), # content -> comment_text
-                ("lang", LANG)
-        ]
-        logger.info(f'Creating test dataset for language: [{lang}]')
-        test_ds_dict[lang] = TabularDataset(path=cfg.test_path, format='csv',
-                                fields=test_fields_dict[lang], skip_header=True,
-                                filter_pred=lambda ex: ex.lang == lang)
-        test_iter_dict[lang] = Iterator(test_ds_dict[lang], 
-                                        batch_size=cfg.batch_size_test,
-                                        sort=False, 
-                                        sort_within_batch=False, 
-                                        repeat=False, 
-                                        train=False,
-                                        device=device)
-        logger.debug(f'Dataset for language [{lang}] size: {len(test_ds_dict[lang])}')
-
-        if lang in cfg.val_langs:
-            val_fields_dict[lang] = [
-                ("idx", None),
-                ("comment_text", TEXT_LNG[lang]),
-                ("lang", LANG),
-                ("toxic", TARGET)
-            ]
-            logger.info(f'Creating validation dataset for language: [{lang}]')
-            val_ds_dict[lang] = TabularDataset(path=cfg.val_path, format='csv',
-                                    fields=val_fields_dict[lang], skip_header=True,
-                                    filter_pred=lambda ex: ex.lang == lang
-                                    )
-            logger.debug(f'Dataset for language [{lang}] has size: {len(val_ds_dict[lang])}')
-            
-            val_iter_dict[lang] = Iterator(val_ds_dict[lang], 
-                                           batch_size=cfg.batch_size_train,
-                                           sort=False, 
-                                           sort_within_batch=False, 
-                                           repeat=False, 
-                                           train=False,
-                                           device=device)
-
-        logger.info(f'Building vocabulary for language [{lang}]')
-        vectors_dict[lang] = Vectors(name=cfg.vectors.format(lang), cache=cfg.vectors_cache)
-        if lang in cfg.val_langs:
-            TEXT_LNG[lang].build_vocab(
-                val_ds_dict[lang], test_ds_dict[lang],
-                max_size=cfg.vocab_size,
-                min_freq=cfg.min_freq,
-                vectors=vectors_dict[lang]
-            )
-        else:
-            TEXT_LNG[lang].build_vocab(
-                test_ds_dict[lang],
-                max_size=cfg.vocab_size,
-                min_freq=cfg.min_freq,
-                vectors=vectors_dict[lang]
-            )
-
-    val_iter = MultilangIter(val_iter_dict.values())
-    test_iter = MultilangIter(test_iter_dict.values())
-
+    train_iter, val_iter, test_iter, text_vocabs = load_data_iters(cfg, cache=False)
 
     ## Sanity check
     ex_train = next(iter(train_iter))
@@ -246,8 +76,8 @@ if __name__ == '__main__':
 
     ## Load vectors & init model
 
-    logger.info(f'Loading pre-trained vectors')
-    emb_vectors_dict = {lang: TEXT_LNG[lang].vocab.vectors for lang in TEXT_LNG.keys()}
+    logger.debug(f'Extracting pre-trained vectors')
+    emb_vectors_dict = {lang: vocab.vectors for lang, vocab in text_vocabs.items()}
 
     model = CNNMultiling(emb_vectors_dict=emb_vectors_dict, 
                          kernel_sizes=cfg.kernel_sizes,
