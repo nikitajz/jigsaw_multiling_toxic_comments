@@ -5,9 +5,11 @@ import pandas as pd
 import numpy as np
 import time
 from pathlib import Path
+from typing import Optional
 
 import torch
 import torch.nn as nn # "cuda" attribute appears only after importing torch.nn #283
+
 from torchtext.data import Field, LabelField, RawField
 from torchtext.data import BucketIterator, Iterator
 from torchtext.data import TabularDataset
@@ -15,6 +17,22 @@ from torchtext.vocab import Vectors
 
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
 from src.utils import format_time
+
+try:
+    from torch.utils.tensorboard import SummaryWriter
+
+    _has_tensorboard = True
+except ImportError:
+    try:
+        from tensorboardX import SummaryWriter
+
+        _has_tensorboard = True
+    except ImportError:
+        _has_tensorboard = False
+
+
+def is_tensorboard_available():
+    return _has_tensorboard
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +42,7 @@ class EarlyStopping:
        Original: https://github.com/Bjarten/early-stopping-pytorch/blob/master/pytorchtools.py
     """
 
-    def __init__(self, patience=7, verbose=False, delta=0):
+    def __init__(self, patience=7, verbose=False, delta=0, path=None):
         """
         Args:
             patience (int): How long to wait after last time validation loss improved.
@@ -41,6 +59,10 @@ class EarlyStopping:
         self.early_stop = False
         self.val_loss_min = np.Inf
         self.delta = delta
+        if path is None:
+            path = Path('.checkpoints/early_stopping_checkpoint.pt')
+            path.mkdir(exist_ok=True)
+        self.path = path
 
     def __call__(self, val_loss, model):
 
@@ -61,105 +83,130 @@ class EarlyStopping:
 
     def save_checkpoint(self, val_loss, model):
         '''Saves model when validation loss decrease.'''
+
         if self.verbose:
             logger.info(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}). Saving model ...')
-        torch.save(model.state_dict(), 'checkpoint.pt')
+        torch.save(model.state_dict(), self.path)
         self.val_loss_min = val_loss
 
+class Trainer:
+    def __init__(self, model, optimizer, scheduler, train_loader, valid_loader, n_epochs, args):
+        """Training loop (with optional EarlyStopping criterion).
+        Arguments:
+            model {nn.Module} -- PyTorch model
+            optimizer {[type]} -- optimizer
+            scheduler {[type]} -- Loss function
+            train_loader {[type]} -- train DataLoader
+            valid_loader {[type]} -- validation DataLoader
+            args {[type]} -- arguments/parameters for training
+            n_epochs {[type]} -- total number of epoch to train the model (if early stopping won't break before this)
+        Returns:
+            (model, train_loss, valid_loss)
+        """
+        self.args = args
+        self.model = model
+        self.optimizer = optimizer
+        self.scheduler = scheduler
+        self.train_loader = train_loader
+        self.valid_loader = valid_loader
+        self.n_epochs = self.args.n_epochs
+        self.device = self.args.device
 
-def train_model(model, optimizer, scheduler, train_loader, valid_loader, n_epochs, device, log_step=40,patience=None):
-    """Training loop (with optional EarlyStopping criterion).
-    Arguments:
-        model {nn.Module} -- PyTorch model
-        criterion {[type]} -- Loss function
-        optimizer {[type]} -- optimizer
-        train_loader {[type]} -- train DataLoader
-        valid_loader {[type]} -- validation DataLoader
-        patience {[type]} -- number of epochs to train before stopping since the last best model found
-        n_epochs {[type]} -- total number of epoch to train the model (if early stopping won't break before this)
-    Returns:
-        (model, train_loss, valid_loss)
-    """
-    model_save_dir = Path('.model_checkpoint')
-    model_save_dir.mkdir(exist_ok=True)
+        model_save_dir = Path('.model_checkpoint')
+        model_save_dir.mkdir(exist_ok=True)
 
-    logger.info(f"**** Running model training for {n_epochs} epochs")
-    
-    epoch_train_loss = []  # the average training loss per epoch
-    epoch_valid_loss = []  # the average validation loss per epoch
+        self._setup_tensorboard(self.args.tensorboard_enable, self.args.tb_log_dir)
 
-    early_stopping_enabled = patience is not None
-    if early_stopping_enabled:
-        early_stopping = EarlyStopping(patience=patience, verbose=True)
+        logger.info(f"**** Running model training for {self.n_epochs} epochs")
 
-    for epoch in range(1, n_epochs+1):
-        logger.debug(f'Epoch {epoch}')
-        train_losses_epoch = []
-        valid_losses_epoch = []
-        val_acc = 0
-        t0 = time.time()
+    def _setup_tensorboard(self, tb_writer, tb_log_dir):
+            if is_tensorboard_available() and self.args.tensorboard_enable:
+                tb_log_dir = Path(tb_log_dir)
+                tb_log_dir.mkdir(exists_ok=True)
+                self.tb_writer = SummaryWriter(log_dir=tb_log_dir)
+            elif not is_tensorboard_available():
+                    logger.warning(
+                        "You are instantiating a Trainer but Tensorboard is not installed. You should consider installing it."
+                    )
 
-        model.train()
-        for step, batch in enumerate(train_loader):
-            b_input_ids = batch[0].to(device)
-            b_input_mask = batch[1].to(device)
-            b_labels = batch[2].to(device)
+    def train_model(self, model_path):
+        
+        epoch_train_loss = []  # the average training loss per epoch
+        epoch_valid_loss = []  # the average validation loss per epoch
 
-            if log_step is not None and step % log_step == 0:
-                elapsed = format_time(time.time() - t0)
-                logger.debug(' Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(train_loader), elapsed))
-
-            optimizer.zero_grad()
-            loss, logits = model(b_input_ids, 
-                                 token_type_ids=None, 
-                                 attention_mask=b_input_mask, 
-                                 labels=b_labels)
-            loss.backward()
-
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-
-            optimizer.step()
-            scheduler.step()
-
-            train_losses_epoch.append(loss.cpu().detach().item())
-
-        model.eval()
-        with torch.no_grad():
-            for step, batch in enumerate(valid_loader):
-                b_input_ids = batch[0].to(device)
-                b_input_mask = batch[1].to(device)
-                b_labels = batch[2].to(device)
-
-                optimizer.zero_grad()
-                loss, logits = model(b_input_ids, 
-                                    token_type_ids=None, 
-                                    attention_mask=b_input_mask, 
-                                    labels=b_labels)
-                
-                valid_losses_epoch.append(loss.cpu().detach().item())
-
-        train_loss_epoch_avg = np.mean(train_losses_epoch)
-        valid_loss_epoch_avg = np.mean(valid_losses_epoch)
-
-        epoch_len = len(str(n_epochs))
-
-        logger.info(f'[{epoch:>{epoch_len}}/{n_epochs:>{epoch_len}}] ' +
-                    f'train_loss: {train_loss_epoch_avg:.5f} ' +
-                    f'valid_loss: {valid_loss_epoch_avg:.5f}')
-
-        epoch_train_loss.append(train_loss_epoch_avg)
-        epoch_valid_loss.append(valid_loss_epoch_avg)
-
+        early_stopping_enabled = self.args.patience is not None
         if early_stopping_enabled:
-            early_stopping(valid_loss_epoch_avg, model)
+            early_stopping = EarlyStopping(patience=self.args.patience, verbose=True, path=self.args.early_stopping_checkpoint_path)
 
-            if early_stopping.early_stop:
-                logger.warning("Early stopping")
-                break
+        for epoch in range(1, self.n_epochs+1):
+            logger.debug(f'Epoch {epoch}')
+            train_losses_epoch = []
+            valid_losses_epoch = []
+            val_acc = 0
+            t0 = time.time()
 
-    model.save_pretrained(model_save_dir)
+            self.model.train()
+            for step, batch in enumerate(self.train_loader):
+                b_input_ids = batch[0].to(self.device)
+                b_input_mask = batch[1].to(self.device)
+                b_labels = batch[2].to(self.device)
 
-    return model, train_losses_epoch, valid_losses_epoch
+                if self.args.log_step is not None and step % self.args.log_step == 0:
+                    elapsed = format_time(time.time() - t0)
+                    logger.debug(' Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(self.train_loader), elapsed))
+
+                self.optimizer.zero_grad()
+                loss, logits = self.model(b_input_ids, 
+                                          token_type_ids=None, 
+                                          attention_mask=b_input_mask, 
+                                          labels=b_labels)
+                loss.backward()
+
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+
+                self.optimizer.step()
+                self.scheduler.step()
+
+                train_losses_epoch.append(loss.cpu().detach().item())
+
+            self.model.eval()
+            with torch.no_grad():
+                for step, batch in enumerate(self.valid_loader):
+                    b_input_ids = batch[0].to(self.device)
+                    b_input_mask = batch[1].to(self.device)
+                    b_labels = batch[2].to(self.device)
+
+                    self.optimizer.zero_grad()
+                    loss, logits = self.model(b_input_ids, 
+                                        token_type_ids=None, 
+                                        attention_mask=b_input_mask, 
+                                        labels=b_labels)
+                    
+                    valid_losses_epoch.append(loss.cpu().detach().item())
+
+            train_loss_epoch_avg = np.mean(train_losses_epoch)
+            valid_loss_epoch_avg = np.mean(valid_losses_epoch)
+
+            epoch_len = len(str(self.args.n_epochs))
+
+            logger.info(f'[{epoch:>{epoch_len}}/{self.args.n_epochs:>{epoch_len}}] ' +
+                        f'train_loss: {train_loss_epoch_avg:.5f} ' +
+                        f'valid_loss: {valid_loss_epoch_avg:.5f}')
+
+            epoch_train_loss.append(train_loss_epoch_avg)
+            epoch_valid_loss.append(valid_loss_epoch_avg)
+
+            if early_stopping_enabled:
+                early_stopping(valid_loss_epoch_avg, self.model)
+
+                if early_stopping.early_stop:
+                    logger.warning("Early stopping")
+                    break
+
+        self.model.save_pretrained(model_path)
+        logger.info(f'Saved finetuned model to {model_path}')
+
+        return train_losses_epoch, valid_losses_epoch
 
 
 def evaluate_performance(model, test_iter, device, print_metrics=False):

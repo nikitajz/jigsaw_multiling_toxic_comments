@@ -3,7 +3,13 @@
 *.bin
 *.csv
 *.pickle
+*.pt
 data/*
+random/*
+notebooks/*
+.model_checkpoint/*
+.vector_cache
+.run_cache/*
 
 # IDEs
 .DS_Store
@@ -128,4 +134,3 @@ dmypy.json
 
 # pytype static type analyzer
 .pytype/
-
