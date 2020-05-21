@@ -1,21 +1,15 @@
 import logging
-
-import dill
-import pandas as pd
-import numpy as np
 import time
 from pathlib import Path
 from typing import Optional
 
+import dill
+import numpy as np
+import pandas as pd
 import torch
-import torch.nn as nn # "cuda" attribute appears only after importing torch.nn #283
+import torch.nn as nn  # "cuda" attribute appears only after importing torch.nn #283
+from sklearn.metrics import roc_auc_score
 
-from torchtext.data import Field, LabelField, RawField
-from torchtext.data import BucketIterator, Iterator
-from torchtext.data import TabularDataset
-from torchtext.vocab import Vectors
-
-from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
 from src.utils import format_time
 
 try:
@@ -23,12 +17,7 @@ try:
 
     _has_tensorboard = True
 except ImportError:
-    try:
-        from tensorboardX import SummaryWriter
-
-        _has_tensorboard = True
-    except ImportError:
-        _has_tensorboard = False
+    _has_tensorboard = False
 
 
 def is_tensorboard_available():
@@ -119,8 +108,8 @@ class Trainer:
 
         logger.info(f"**** Running model training for {self.n_epochs} epochs")
 
-    def _setup_tensorboard(self, tb_writer, tb_log_dir):
-            if is_tensorboard_available() and self.args.tensorboard_enable:
+    def _setup_tensorboard(self, tensorboard_enable, tb_log_dir):
+            if is_tensorboard_available() and tensorboard_enable:
                 tb_log_dir = Path(tb_log_dir)
                 tb_log_dir.mkdir(exists_ok=True)
                 self.tb_writer = SummaryWriter(log_dir=tb_log_dir)
@@ -168,6 +157,7 @@ class Trainer:
                 self.scheduler.step()
 
                 train_losses_epoch.append(loss.cpu().detach().item())
+                self.tb_writer.add_scalar('Train loss', loss.cpu().detach().item(), step)
 
             self.model.eval()
             with torch.no_grad():
@@ -205,6 +195,7 @@ class Trainer:
 
         self.model.save_pretrained(model_path)
         logger.info(f'Saved finetuned model to {model_path}')
+        self.tb_writer.close()
 
         return train_losses_epoch, valid_losses_epoch
 
@@ -256,3 +247,21 @@ def evaluate_performance(model, test_iter, device, print_metrics=False):
             logger.info(f'{k.capitalize()}: {v:.3f}')
 
     return scores
+
+
+def predict_toxic(model, test_loader, device):
+    y_pred_l = []
+
+    model.eval()
+    with torch.no_grad():
+        for batch in test_loader:
+            b_input_ids = batch[0].to(device)
+            b_input_mask = batch[1].to(device)
+
+            logits = model(b_input_ids, 
+                           token_type_ids=None, 
+                           attention_mask=b_input_mask)
+            y_pred_l.append(logits[0])
+            
+        y_pred = torch.cat(y_pred_l, 0).argmax(dim=1).cpu().detach().numpy()
+    return y_pred

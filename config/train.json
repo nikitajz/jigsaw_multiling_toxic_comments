@@ -1,9 +1,10 @@
 {
+    "dataset": "google-translated",
     "model_name": "xlm-roberta-base",
     "config_name": "xlm-roberta-base",
     "tokenizer_name": "xlm-roberta-base",
     "model_checkpoint_path": ".model_checkpoint",
-    "load_checkpoint": false,
+    "load_checkpoint": true,
     "max_len": 320,
     "device": "cuda:0",
     "n_epochs": 2,

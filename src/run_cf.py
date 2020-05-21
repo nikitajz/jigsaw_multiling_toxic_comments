@@ -1,15 +1,16 @@
 """ Finetuning the XLM-RoBERTa model for sequence classification."""
 
 import logging
-from pprint import pformat
 import os
 import sys
 import dataclasses
 from dataclasses import dataclass, field
 from typing import Dict, Optional
+from pathlib import Path
 
 import pandas as pd
 import numpy as np
+from pprint import pformat
 
 import torch
 from torch.utils.data import TensorDataset, random_split
@@ -20,8 +21,8 @@ from transformers import (XLMRobertaTokenizer,
                           XLMRobertaConfig, 
                           XLMRobertaModel, 
                           AdamW,
-                          set_seed)
-from transformers import get_linear_schedule_with_warmup
+                          set_seed,
+                          get_linear_schedule_with_warmup)
 
 from src.config_base import ModelArgs, TrainingArgs
 from src.trainer import Trainer, evaluate_performance
@@ -62,18 +63,33 @@ if __name__ == '__main__':
 
     tokenizer = XLMRobertaTokenizer.from_pretrained(model_args.tokenizer_name)
 
-    logger.info('Loading datasets')
+    logger.info(f'Loading datasets: {training_args.dataset}')
     cols_to_use = ['comment_text', 'toxic']
-    # data from first competition. English comments from Wikipedia’s talk page edits.
-    train_wiki = pd.read_csv('data/jigsaw-toxic-comment-train.csv', usecols=cols_to_use)
-    logger.debug(f'Training wiki shape: {train_wiki.shape}')
-    # data from second competition. Civil Comments dataset with additional labels.
-    train_cc = pd.read_csv('data/jigsaw-unintended-bias-train.csv', usecols=cols_to_use)
-    logger.debug(f'Training cc shape: {train_cc.shape}')
+    if training_args.dataset in ["en", "wiki"]:
+        # data from first competition. English comments from Wikipedia’s talk page edits.
+        train_wiki = pd.read_csv('data/jigsaw-toxic-comment-train.csv', usecols=cols_to_use)
+        logger.debug(f'Training wiki shape: {train_wiki.shape}')
+    if training_args.dataset in ["en", "cc"]:
+        # data from second competition. Civil Comments dataset with additional labels.
+        train_cc = pd.read_csv('data/jigsaw-unintended-bias-train.csv', usecols=cols_to_use)
+        logger.debug(f'Training cc shape: {train_cc.shape}')
 
-    train = pd.concat([train_wiki, train_cc], axis=0)
-    assert train.shape[1] == train_wiki.shape[1]
-    logger.debug(f'Combined training shape: {train.shape}')
+    if training_args.dataset == "en":
+        train = pd.concat([train_wiki, train_cc], axis=0)
+        assert train.shape[1] == train_wiki.shape[1]
+        logger.debug(f'Combined training shape: {train.shape}')
+    elif training_args.dataset == "wiki":
+        train = train_wiki
+    elif training_args.dataset == "cc":
+        train = train_cc
+    elif training_args.dataset == "google-translated":
+        langs = ["es", "fr", "it", "pt", "ru", "tr"]
+        data_path = Path("data/translated/google-api/cleaned/")
+        filename = "jigsaw-toxic-comment-train-google-{}-cleaned.csv.zip"
+        train = pd.concat(
+            [pd.read_csv(data_path/filename.format(lang), usecols=cols_to_use) for lang in langs]
+        )
+        logger.debug(f'Training dataset shape: {train.shape}')
 
     # TODO: consider using score, but this requires different loss
     train['toxic'] = (train['toxic'] >= 0.5).astype('int')
@@ -83,6 +99,45 @@ if __name__ == '__main__':
 
     sentences = train['comment_text'].values
     labels = train['toxic'].values
+
+    logger.info('Applying tokenizer to train dataset')
+    input_ids = []
+    attention_masks = []
+
+    # For every sentence...
+    for sent in sentences:
+        encoded_dict = tokenizer.encode_plus(
+                            sent,                    
+                            add_special_tokens = True,
+                            max_length = model_args.max_len, 
+                            pad_to_max_length = True,
+                            return_attention_mask = True, 
+                            return_tensors = 'pt'
+                    )
+        
+        input_ids.append(encoded_dict['input_ids'])
+        
+        attention_masks.append(encoded_dict['attention_mask'])
+
+    input_ids = torch.cat(input_ids, dim=0)
+    attention_masks = torch.cat(attention_masks, dim=0)
+    labels = torch.tensor(labels)
+
+    logger.debug(f"Sentence sample.\nOriginal: {sentences[0]}\nToken IDs: {input_ids[0]}")
+    
+    train_dataset = TensorDataset(input_ids, attention_masks, labels)
+
+    train_dataloader = DataLoader(
+                train_dataset,  
+                sampler = RandomSampler(train_dataset), 
+                batch_size = training_args.batch_size 
+            )
+
+    ## load validation dataset
+    val_df = pd.read_csv('data/validation.csv', usecols=cols_to_use)
+
+    sentences = val_df['comment_text'].values
+    labels = val_df['toxic'].values
 
     logger.info('Applying tokenizer to train dataset')
     # Tokenize all of the sentences and map the tokens to thier word IDs.
@@ -116,30 +171,13 @@ if __name__ == '__main__':
     print('Token IDs:', input_ids[0])
 
     # Combine the training inputs into a TensorDataset.
-    dataset = TensorDataset(input_ids, attention_masks, labels)
+    val_dataset = TensorDataset(input_ids, attention_masks, labels)
 
-    train_size = int(0.9 * len(dataset))
-    holdout_size = len(dataset) - train_size
-
-    # # Divide the dataset by randomly selecting samples.
-    train_dataset, holdout_dataset = random_split(dataset, [train_size, holdout_size])
-
-    print('{:>5,} training samples'.format(train_size))
-    print('{:>5,} holdout samples'.format(holdout_size))
-
-    train_dataloader = DataLoader(
-                train_dataset,  # The training samples.
-                sampler = RandomSampler(train_dataset), # Select batches randomly
-                batch_size = training_args.batch_size # Trains with this batch size.
+    val_dataloader = DataLoader(
+                val_dataset, 
+                sampler = SequentialSampler(val_dataset), 
+                batch_size = training_args.batch_size  
             )
-
-    # For validation the order doesn't matter, so we'll just read them sequentially.
-    holdout_dataloader = DataLoader(
-                holdout_dataset, # The validation samples.
-                sampler = SequentialSampler(holdout_dataset), # Pull out batches sequentially.
-                batch_size = training_args.batch_size # Evaluate with this batch size.
-            )
-
     optimizer = AdamW(model.parameters(),
                     lr = training_args.learning_rate, 
                     eps = training_args.adam_epsilon
@@ -147,11 +185,10 @@ if __name__ == '__main__':
 
     total_steps = len(train_dataloader) * training_args.n_epochs
 
-    # Create the learning rate scheduler.
     scheduler = get_linear_schedule_with_warmup(optimizer, 
-                                                num_warmup_steps = 0, # Default value in run_glue.py
+                                                num_warmup_steps = 0,
                                                 num_training_steps = total_steps)
 
-    trainer = Trainer(model, optimizer, scheduler, train_dataloader, holdout_dataloader, n_epochs=training_args.n_epochs, args=training_args)
+    trainer = Trainer(model, optimizer, scheduler, train_dataloader, val_dataloader, n_epochs=training_args.n_epochs, args=training_args)
 
     trainer.train_model(model_args.model_checkpoint_path)

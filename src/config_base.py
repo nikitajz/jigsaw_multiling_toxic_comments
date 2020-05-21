@@ -73,6 +73,9 @@ class TrainingArgs:
     patience: int = field(
         default=5, metadata={"help": "Early stopping patience"}
     )
+    dataset: str = field(
+        default='en', metadata={"help": "Which dataset to use for training. Possible options are: `en`, `google-translated`, `wiki`, `cc`"}
+    )
 
     def __post_init__(self):
         self.device = torch.device(self.device if torch.cuda.is_available() else "cpu")
