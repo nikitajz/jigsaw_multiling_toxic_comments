@@ -3,12 +3,14 @@
 *.bin
 *.csv
 *.pickle
+*.pt
 data/*
 random/*
 notebooks/*
+runs/*
 .vector_cache
 .run_cache/*
-checkpoint.pt
+.model_checkpoint/*
 
 # IDEs
 .DS_Store
