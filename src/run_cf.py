@@ -24,6 +24,7 @@ from transformers import (XLMRobertaTokenizer,
                           set_seed,
                           get_linear_schedule_with_warmup)
 
+sys.path.append(os.getcwd())
 from src.config_base import ModelArgs, TrainingArgs
 from src.trainer import Trainer, evaluate_performance
 from src.utils import load_or_parse_args
@@ -58,6 +59,12 @@ if __name__ == '__main__':
         output_attentions = False, 
         output_hidden_states = False, 
     )
+
+    if training_args.freeze_backbone:
+        logger.warning("Freezing roberta model (only classifier going to be trained)")
+        for name, param in model.named_parameters():
+            if 'classifier' not in name: # classifier layer
+                param.requires_grad = False
 
     model.to(training_args.device)
 
@@ -94,8 +101,14 @@ if __name__ == '__main__':
     # TODO: consider using score, but this requires different loss
     train['toxic'] = (train['toxic'] >= 0.5).astype('int')
 
-    # train = train.sample(1000, random_state=training_args.seed)
-    # logger.warning(f'Sampled training dataset shape: {train.shape}')
+    # Sample equal samples per class
+    if training_args.resample:
+        train_pos = train[train["toxic"] == 1]
+        train_neg = train[train["toxic"] == 0].sample(train_pos.shape[0], random_state=training_args.seed)
+        train = pd.concat([train_pos, train_neg])
+        del train_neg, train_pos
+
+        logger.warning(f'Sampled training dataset shape: {train.shape}')
 
     sentences = train['comment_text'].values
     labels = train['toxic'].values
@@ -166,9 +179,9 @@ if __name__ == '__main__':
     attention_masks = torch.cat(attention_masks, dim=0)
     labels = torch.tensor(labels)
 
-    # Print sentence 0, now as a list of IDs.
-    print('Original: ', sentences[0])
-    print('Token IDs:', input_ids[0])
+    # # Print sentence 0, now as a list of IDs.
+    # print('Original: ', sentences[0])
+    # print('Token IDs:', input_ids[0])
 
     # Combine the training inputs into a TensorDataset.
     val_dataset = TensorDataset(input_ids, attention_masks, labels)
@@ -178,7 +191,7 @@ if __name__ == '__main__':
                 sampler = SequentialSampler(val_dataset), 
                 batch_size = training_args.batch_size  
             )
-    optimizer = AdamW(model.parameters(),
+    optimizer = AdamW(filter(lambda param: param.requires_grad, model.parameters()),
                     lr = training_args.learning_rate, 
                     eps = training_args.adam_epsilon
                     )

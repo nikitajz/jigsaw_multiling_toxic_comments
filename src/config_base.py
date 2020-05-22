@@ -31,12 +31,21 @@ class ModelArgs:
 
 @dataclass
 class TrainingArgs:  
+    dataset: str = field(
+        default='en', metadata={"help": "Which dataset to use for training. Possible options are: `en`, `google-translated`, `wiki`, `cc`"}
+    )
+    resample: bool = field(
+        default=False, metadata={"help": "Resample to have equal samples per class"}
+    )
     seed: int = field(
         default=42, metadata={"help": "Random number"}
     )
     device: str = field(
         default='cuda:0', metadata={"help": "Device to train model on"}
     )
+    freeze_backbone: bool = field(
+        default=False, metadata={"help": "Freeze Roberta model and train only classifier"}
+    )    
     n_epochs: int = field(
         default=2, metadata={"help": "Number of epochs to train"}
     )    
@@ -61,20 +70,20 @@ class TrainingArgs:
     log_step: Optional[int] = field(
         default=40, metadata={"help": "Log training metrics every $step"}
     )
+    eval_on_log_step: bool = field(
+        default=False, metadata={"help": "Evaluate on validation dataset on each log step"}
+    )    
     tensorboard_enable: bool = field(
         default=False, metadata={"help": "Whether to use tensorboard"}
     )
     tb_log_dir: str = field(
-        default='.tb_logs', metadata={"help": "Directory to save Tensorboard logs"}
+        default='runs', metadata={"help": "Directory to save Tensorboard logs"}
     )
     early_stopping_checkpoint_path: str = field(
         default="early_stopping_checkpoint.pt", metadata={"help": "Checkpoint path."}
     )
     patience: int = field(
         default=5, metadata={"help": "Early stopping patience"}
-    )
-    dataset: str = field(
-        default='en', metadata={"help": "Which dataset to use for training. Possible options are: `en`, `google-translated`, `wiki`, `cc`"}
     )
 
     def __post_init__(self):

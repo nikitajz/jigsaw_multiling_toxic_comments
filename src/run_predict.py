@@ -21,6 +21,7 @@ from transformers import (XLMRobertaTokenizer,
                           HfArgumentParser,
                           set_seed)
 
+sys.path.append(os.getcwd())
 from src.config_base import ModelArgs, TrainingArgs
 from src.trainer import predict_toxic
 from src.utils import load_or_parse_args
@@ -110,5 +111,5 @@ if __name__ == "__main__":
 
     submit = pd.read_csv('data/sample_submission.csv')
     submit['toxic'] = preds
-    logger.info(f"There are {(preds == 1).sum()}/{preds.shape} positive samples")
+    logger.info(f"There are {(preds == 1).sum()}/{preds.shape[0]} positive samples")
     submit.to_csv('data/submit.csv', index=False)

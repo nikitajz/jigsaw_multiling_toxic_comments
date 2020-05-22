@@ -1,13 +1,17 @@
 {
-    "dataset": "google-translated",
     "model_name": "xlm-roberta-base",
     "config_name": "xlm-roberta-base",
     "tokenizer_name": "xlm-roberta-base",
     "model_checkpoint_path": ".model_checkpoint",
-    "load_checkpoint": true,
-    "max_len": 320,
+    "load_checkpoint": false,
+    "freeze_backbone": true,
+    "dataset": "en",
+    "resample": true,
+    "max_len": 128,
     "device": "cuda:0",
-    "n_epochs": 2,
-    "batch_size": 16,
-    "learning_rate": 5e-5
+    "n_epochs": 1,
+    "batch_size": 32,
+    "learning_rate": 5e-5,
+    "tensorboard_enable": true,
+    "eval_on_log_step": true
 }

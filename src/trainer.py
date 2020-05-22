@@ -111,7 +111,7 @@ class Trainer:
     def _setup_tensorboard(self, tensorboard_enable, tb_log_dir):
             if is_tensorboard_available() and tensorboard_enable:
                 tb_log_dir = Path(tb_log_dir)
-                tb_log_dir.mkdir(exists_ok=True)
+                tb_log_dir.mkdir(exist_ok=True)
                 self.tb_writer = SummaryWriter(log_dir=tb_log_dir)
             elif not is_tensorboard_available():
                     logger.warning(
@@ -127,10 +127,11 @@ class Trainer:
         if early_stopping_enabled:
             early_stopping = EarlyStopping(patience=self.args.patience, verbose=True, path=self.args.early_stopping_checkpoint_path)
 
-        for epoch in range(1, self.n_epochs+1):
+        for epoch in range(self.n_epochs):
             logger.debug(f'Epoch {epoch}')
             train_losses_epoch = []
             valid_losses_epoch = []
+            last_log_step = 0
             val_acc = 0
             t0 = time.time()
 
@@ -139,10 +140,6 @@ class Trainer:
                 b_input_ids = batch[0].to(self.device)
                 b_input_mask = batch[1].to(self.device)
                 b_labels = batch[2].to(self.device)
-
-                if self.args.log_step is not None and step % self.args.log_step == 0:
-                    elapsed = format_time(time.time() - t0)
-                    logger.debug(' Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(self.train_loader), elapsed))
 
                 self.optimizer.zero_grad()
                 loss, logits = self.model(b_input_ids, 
@@ -157,31 +154,33 @@ class Trainer:
                 self.scheduler.step()
 
                 train_losses_epoch.append(loss.cpu().detach().item())
-                self.tb_writer.add_scalar('Train loss', loss.cpu().detach().item(), step)
 
-            self.model.eval()
-            with torch.no_grad():
-                for step, batch in enumerate(self.valid_loader):
-                    b_input_ids = batch[0].to(self.device)
-                    b_input_mask = batch[1].to(self.device)
-                    b_labels = batch[2].to(self.device)
+                if self.args.log_step is not None and step % self.args.log_step == 0:
+                    elapsed = format_time(time.time() - t0)
+                    logger.debug(' Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(self.train_loader), elapsed))
+                    self.tb_writer.add_scalar('Train/Loss', np.mean(train_losses_epoch[last_log_step:]), epoch * len(self.train_loader) + step)
+                    last_log_step = epoch * len(self.train_loader) + step
+                    if self.args.eval_on_log_step:
+                        val_scores = evaluate_performance(self.model, self.valid_loader, self.device)
+                        logger.info(' Batch {:>5,}  of  {:>5,}.\n\tValidation loss: {:.6f} AUC: {:.5f} accuracy: {:5f}.'.format(
+                                    step, len(self.train_loader), val_scores['loss'], val_scores['auc'], val_scores['accuracy']))
+                        self.tb_writer.add_scalar('Validation/Loss', val_scores['loss'], epoch * len(self.train_loader) + step)
+                        self.tb_writer.add_scalar('Validation/AUC', val_scores['auc'], epoch * len(self.train_loader) + step)
 
-                    self.optimizer.zero_grad()
-                    loss, logits = self.model(b_input_ids, 
-                                        token_type_ids=None, 
-                                        attention_mask=b_input_mask, 
-                                        labels=b_labels)
-                    
-                    valid_losses_epoch.append(loss.cpu().detach().item())
 
             train_loss_epoch_avg = np.mean(train_losses_epoch)
-            valid_loss_epoch_avg = np.mean(valid_losses_epoch)
 
-            epoch_len = len(str(self.args.n_epochs))
+            valid_epoch_scores = evaluate_performance(model, self.valid_loader, self.device)
+            valid_loss_epoch_avg = valid_epoch_scores['loss']
 
-            logger.info(f'[{epoch:>{epoch_len}}/{self.args.n_epochs:>{epoch_len}}] ' +
+            epoch_str_len = len(str(self.args.n_epochs))
+
+            logger.info(f'[{epoch:>{epoch_str_len}}/{self.args.n_epochs:>{epoch_str_len}}] ' +
                         f'train_loss: {train_loss_epoch_avg:.5f} ' +
-                        f'valid_loss: {valid_loss_epoch_avg:.5f}')
+                        f'valid loss: {valid_loss_epoch_avg:.5f} ' +
+                        f'auc: {valid_epoch_scores["auc"]:.5f} ' +
+                        f'accuracy: {valid_epoch_scores["accuracy"]:.5f}'
+                        )
 
             epoch_train_loss.append(train_loss_epoch_avg)
             epoch_valid_loss.append(valid_loss_epoch_avg)
@@ -200,23 +199,20 @@ class Trainer:
         return train_losses_epoch, valid_losses_epoch
 
 
-def evaluate_performance(model, test_iter, device, print_metrics=False):
+def evaluate_performance(model, dataloader, device, print_metrics=False):
     """
     Given the trained model and test dataloader, evaluate model performance. Namely:
     - accuracy
-    - precision
-    - recall
-    - F1
+    - roc auc
     """
 
-    acc = 0
-    test_loss = 0.0
-    test_size = len(test_iter)
+    test_loss_l = []
+    test_size = len(dataloader.dataset)
     y_true_l = []
     y_pred_l = []
     model.eval()
     with torch.no_grad():
-        for step, batch in enumerate(test_iter):
+        for step, batch in enumerate(dataloader):
             b_input_ids = batch[0].to(device)
             b_input_mask = batch[1].to(device)
             b_labels = batch[2].to(device)
@@ -226,21 +222,18 @@ def evaluate_performance(model, test_iter, device, print_metrics=False):
                                  attention_mask=b_input_mask, 
                                  labels=b_labels)
 
-            test_loss += loss.cpu().detach().item()
-            logits = torch.argmax(logits, dim=1)
-            acc += torch.eq(logits, b_labels).sum().cpu().detach().item()
+            test_loss_l.append(loss.cpu().detach().item())
+            b_pred = torch.argmax(logits, dim=1)
             y_true_l.append(b_labels)
-            y_pred_l.append(logits)
+            y_pred_l.append(b_pred)
 
         y_true = torch.cat(y_true_l, 0).cpu().detach().numpy()
         y_pred = torch.cat(y_pred_l, 0).cpu().detach().numpy()
-        test_loss /= test_size
-        acc /= float(test_size)
 
     scores = {}
-    scores['loss'] = test_loss
+    scores['loss'] = np.mean(test_loss_l)
     scores['auc'] = roc_auc_score(y_true, y_pred)
-    scores['accuracy'] = acc
+    scores['accuracy'] = np.mean(y_true == y_pred)
 
     if print_metrics:
         for k, v in scores.items():

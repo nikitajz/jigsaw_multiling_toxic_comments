@@ -21,6 +21,7 @@ from transformers import (XLMRobertaTokenizer,
                           HfArgumentParser,
                           set_seed)
 
+sys.path.append(os.getcwd())
 from src.config_base import ModelArgs, TrainingArgs
 from src.trainer import evaluate_performance
 from src.utils import load_or_parse_args
@@ -67,7 +68,6 @@ if __name__ == "__main__":
     import pandas as pd
     cols_to_use = ['comment_text', 'toxic']
     val_df = pd.read_csv('data/validation.csv', usecols=cols_to_use)
-
 
     sentences = val_df['comment_text'].values
     labels = val_df['toxic'].values
