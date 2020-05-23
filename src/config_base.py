@@ -77,7 +77,7 @@ class TrainingArgs:
         default=False, metadata={"help": "Whether to use tensorboard"}
     )
     tb_log_dir: str = field(
-        default='runs', metadata={"help": "Directory to save Tensorboard logs"}
+        default=None, metadata={"help": "Directory to save Tensorboard logs"}
     )
     early_stopping_checkpoint_path: str = field(
         default="early_stopping_checkpoint.pt", metadata={"help": "Checkpoint path."}

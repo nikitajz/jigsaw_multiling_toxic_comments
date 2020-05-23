@@ -110,9 +110,12 @@ class Trainer:
 
     def _setup_tensorboard(self, tensorboard_enable, tb_log_dir):
             if is_tensorboard_available() and tensorboard_enable:
-                tb_log_dir = Path(tb_log_dir)
-                tb_log_dir.mkdir(exist_ok=True)
-                self.tb_writer = SummaryWriter(log_dir=tb_log_dir)
+                if tb_log_dir is not None:
+                    tb_log_dir = Path(tb_log_dir)
+                    tb_log_dir.mkdir(exist_ok=True)
+                    self.tb_writer = SummaryWriter(log_dir=tb_log_dir)
+                else:
+                    self.tb_writer = SummaryWriter()
             elif not is_tensorboard_available():
                     logger.warning(
                         "You are instantiating a Trainer but Tensorboard is not installed. You should consider installing it."
@@ -157,20 +160,20 @@ class Trainer:
 
                 if self.args.log_step is not None and step % self.args.log_step == 0:
                     elapsed = format_time(time.time() - t0)
-                    logger.debug(' Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(self.train_loader), elapsed))
+                    logger.info('Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(self.train_loader), elapsed))
                     self.tb_writer.add_scalar('Train/Loss', np.mean(train_losses_epoch[last_log_step:]), epoch * len(self.train_loader) + step)
                     last_log_step = epoch * len(self.train_loader) + step
                     if self.args.eval_on_log_step:
                         val_scores = evaluate_performance(self.model, self.valid_loader, self.device)
-                        logger.info(' Batch {:>5,}  of  {:>5,}.\n\tValidation loss: {:.6f} AUC: {:.5f} accuracy: {:5f}.'.format(
-                                    step, len(self.train_loader), val_scores['loss'], val_scores['auc'], val_scores['accuracy']))
+                        logger.info('Validation loss: {:.6f} AUC: {:.5f} accuracy: {:5f}.'.format(
+                                     val_scores['loss'], val_scores['auc'], val_scores['accuracy']))
                         self.tb_writer.add_scalar('Validation/Loss', val_scores['loss'], epoch * len(self.train_loader) + step)
                         self.tb_writer.add_scalar('Validation/AUC', val_scores['auc'], epoch * len(self.train_loader) + step)
 
 
             train_loss_epoch_avg = np.mean(train_losses_epoch)
 
-            valid_epoch_scores = evaluate_performance(model, self.valid_loader, self.device)
+            valid_epoch_scores = evaluate_performance(self.model, self.valid_loader, self.device)
             valid_loss_epoch_avg = valid_epoch_scores['loss']
 
             epoch_str_len = len(str(self.args.n_epochs))

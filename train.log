@@ -1,0 +1,646 @@
+05/22/2020 22:21:55 - INFO - src.utils -   ModelArgs:
+{'cache_dir': None,
+ 'config_name': 'xlm-roberta-base',
+ 'load_checkpoint': False,
+ 'max_len': 128,
+ 'model_checkpoint_path': '.model_checkpoint',
+ 'model_name': 'xlm-roberta-base',
+ 'tokenizer_name': 'xlm-roberta-base'}
+
+05/22/2020 22:21:55 - INFO - src.utils -   TrainingArgs:
+{'adam_epsilon': 1e-08,
+ 'batch_size': 32,
+ 'dataset': 'en',
+ 'device': device(type='cuda', index=0),
+ 'early_stopping_checkpoint_path': 'early_stopping_checkpoint.pt',
+ 'eval_on_log_step': True,
+ 'freeze_backbone': True,
+ 'learning_rate': 5e-05,
+ 'log_step': 40,
+ 'max_grad_norm': 1.0,
+ 'n_epochs': 1,
+ 'num_train_epochs': 3.0,
+ 'patience': 5,
+ 'resample': True,
+ 'seed': 42,
+ 'tb_log_dir': None,
+ 'tensorboard_enable': True,
+ 'weight_decay': 0.0}
+
+05/22/2020 22:21:55 - INFO - __main__ -   Fixing the seed: [42]
+05/22/2020 22:21:55 - INFO - __main__ -   Creating model and tokenizer
+05/22/2020 22:21:55 - INFO - __main__ -   Using pretrained HF model (without finetuning)
+05/22/2020 22:21:55 - DEBUG - urllib3.connectionpool -   Starting new HTTPS connection (1): s3.amazonaws.com:443
+05/22/2020 22:21:55 - DEBUG - urllib3.connectionpool -   https://s3.amazonaws.com:443 "HEAD /models.huggingface.co/bert/xlm-roberta-base-config.json HTTP/1.1" 200 0
+05/22/2020 22:21:55 - INFO - transformers.configuration_utils -   loading configuration file https://s3.amazonaws.com/models.huggingface.co/bert/xlm-roberta-base-config.json from cache at /home/nj/.cache/torch/transformers/762ddd751172e9d3229e5da17a459eee6c0dfdc237c718944d0b1a85f06c7e1e.2b0f807393c56e8861a31cd67d2fc0b45d71d9735dd47dd66afb650f90b6d2a8
+05/22/2020 22:21:55 - INFO - transformers.configuration_utils -   Model config XLMRobertaConfig {
+  "architectures": [
+    "XLMRobertaForMaskedLM"
+  ],
+  "attention_probs_dropout_prob": 0.1,
+  "bos_token_id": 0,
+  "eos_token_id": 2,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 768,
+  "initializer_range": 0.02,
+  "intermediate_size": 3072,
+  "layer_norm_eps": 1e-05,
+  "max_position_embeddings": 514,
+  "model_type": "xlm-roberta",
+  "num_attention_heads": 12,
+  "num_hidden_layers": 12,
+  "output_past": true,
+  "pad_token_id": 1,
+  "type_vocab_size": 1,
+  "vocab_size": 250002
+}
+
+05/22/2020 22:21:55 - DEBUG - urllib3.connectionpool -   Starting new HTTPS connection (1): cdn.huggingface.co:443
+05/22/2020 22:21:55 - DEBUG - urllib3.connectionpool -   https://cdn.huggingface.co:443 "HEAD /xlm-roberta-base-pytorch_model.bin HTTP/1.1" 200 0
+05/22/2020 22:21:55 - INFO - transformers.modeling_utils -   loading weights file https://cdn.huggingface.co/xlm-roberta-base-pytorch_model.bin from cache at /home/nj/.cache/torch/transformers/5cbeb972feded79b927818648bf14dc71b7810cda88c8c971a9d45c0dab901ec.aeeaca90954dc20ffa2909de722cfbfd455c5bb16d480c5bdf6d7fe79c68c267
+05/22/2020 22:22:08 - INFO - transformers.modeling_utils -   Weights of XLMRobertaForSequenceClassification not initialized from pretrained model: ['classifier.dense.weight', 'classifier.dense.bias', 'classifier.out_proj.weight', 'classifier.out_proj.bias']
+05/22/2020 22:22:08 - INFO - transformers.modeling_utils -   Weights from pretrained model not used in XLMRobertaForSequenceClassification: ['lm_head.bias', 'lm_head.dense.weight', 'lm_head.dense.bias', 'lm_head.layer_norm.weight', 'lm_head.layer_norm.bias', 'lm_head.decoder.weight']
+05/22/2020 22:22:08 - WARNING - __main__ -   Freezing roberta model (only classifier going to be trained)
+05/22/2020 22:22:09 - DEBUG - urllib3.connectionpool -   Starting new HTTPS connection (1): s3.amazonaws.com:443
+05/22/2020 22:22:10 - DEBUG - urllib3.connectionpool -   https://s3.amazonaws.com:443 "HEAD /models.huggingface.co/bert/xlm-roberta-base-sentencepiece.bpe.model HTTP/1.1" 200 0
+05/22/2020 22:22:10 - INFO - transformers.tokenization_utils -   loading file https://s3.amazonaws.com/models.huggingface.co/bert/xlm-roberta-base-sentencepiece.bpe.model from cache at /home/nj/.cache/torch/transformers/0c370616ddfc06067c0634160f749c2cf9d8da2c50e03a2617ce5841c8df3b1d.309f0c29486cffc28e1e40a2ab0ac8f500c203fe080b95f820aa9cb58e5b84ed
+05/22/2020 22:22:11 - INFO - __main__ -   Loading datasets: en
+05/22/2020 22:22:11 - DEBUG - __main__ -   Training wiki shape: (223549, 2)
+05/22/2020 22:22:17 - DEBUG - __main__ -   Training cc shape: (1902194, 2)
+05/22/2020 22:22:17 - DEBUG - __main__ -   Combined training shape: (2125743, 2)
+05/22/2020 22:22:17 - WARNING - __main__ -   Sampled training dataset shape: (346990, 2)
+05/22/2020 22:22:17 - INFO - __main__ -   Applying tokenizer to train dataset
+05/22/2020 22:24:31 - DEBUG - __main__ -   Sentence sample.
+Original: COCKSUCKER BEFORE YOU PISS AROUND ON MY WORK
+Token IDs: tensor([     0,   8244,  20572,  16395,    441,  34324,   9622,  61692,    647,
+         82310,    436,  43351,      6, 147243,  34384,  29197,  54133, 231355,
+             2,      1,      1,      1,      1,      1,      1,      1,      1,
+             1,      1,      1,      1,      1,      1,      1,      1,      1,
+             1,      1,      1,      1,      1,      1,      1,      1,      1,
+             1,      1,      1,      1,      1,      1,      1,      1,      1,
+             1,      1,      1,      1,      1,      1,      1,      1,      1,
+             1,      1,      1,      1,      1,      1,      1,      1,      1,
+             1,      1,      1,      1,      1,      1,      1,      1,      1,
+             1,      1,      1,      1,      1,      1,      1,      1,      1,
+             1,      1,      1,      1,      1,      1,      1,      1,      1,
+             1,      1,      1,      1,      1,      1,      1,      1,      1,
+             1,      1,      1,      1,      1,      1,      1,      1,      1,
+             1,      1,      1,      1,      1,      1,      1,      1,      1,
+             1,      1])
+05/22/2020 22:24:31 - INFO - __main__ -   Applying tokenizer to train dataset
+05/22/2020 22:24:35 - INFO - src.trainer -   **** Running model training for 1 epochs
+05/22/2020 22:24:35 - DEBUG - src.trainer -   Epoch 0
+/opt/conda/conda-bld/pytorch_1587428398394/work/torch/csrc/utils/python_arg_parser.cpp:756: UserWarning: This overload of add_ is deprecated:
+	add_(Number alpha, Tensor other)
+Consider using one of the following signatures instead:
+	add_(Tensor other, *, Number alpha)
+05/22/2020 22:24:36 - INFO - src.trainer -   Batch     0  of  10,844.    Elapsed: 0:00:00.
+05/22/2020 22:25:01 - INFO - src.trainer -   Validation loss: 0.736512 AUC: 0.50000 accuracy: 0.153750.
+05/22/2020 22:25:05 - INFO - src.trainer -   Batch    40  of  10,844.    Elapsed: 0:00:30.
+05/22/2020 22:25:31 - INFO - src.trainer -   Validation loss: 0.655037 AUC: 0.50000 accuracy: 0.846250.
+05/22/2020 22:25:35 - INFO - src.trainer -   Batch    80  of  10,844.    Elapsed: 0:01:00.
+05/22/2020 22:26:01 - INFO - src.trainer -   Validation loss: 0.665227 AUC: 0.69714 accuracy: 0.855625.
+05/22/2020 22:26:05 - INFO - src.trainer -   Batch   120  of  10,844.    Elapsed: 0:01:30.
+05/22/2020 22:26:31 - INFO - src.trainer -   Validation loss: 0.676794 AUC: 0.73447 accuracy: 0.667125.
+05/22/2020 22:26:35 - INFO - src.trainer -   Batch   160  of  10,844.    Elapsed: 0:02:00.
+05/22/2020 22:27:01 - INFO - src.trainer -   Validation loss: 0.624232 AUC: 0.62189 accuracy: 0.867875.
+05/22/2020 22:27:05 - INFO - src.trainer -   Batch   200  of  10,844.    Elapsed: 0:02:29.
+05/22/2020 22:27:30 - INFO - src.trainer -   Validation loss: 0.683384 AUC: 0.69887 accuracy: 0.537625.
+05/22/2020 22:27:35 - INFO - src.trainer -   Batch   240  of  10,844.    Elapsed: 0:02:59.
+05/22/2020 22:28:00 - INFO - src.trainer -   Validation loss: 0.618861 AUC: 0.71185 accuracy: 0.856875.
+05/22/2020 22:28:04 - INFO - src.trainer -   Batch   280  of  10,844.    Elapsed: 0:03:29.
+05/22/2020 22:28:30 - INFO - src.trainer -   Validation loss: 0.651396 AUC: 0.75799 accuracy: 0.708625.
+05/22/2020 22:28:34 - INFO - src.trainer -   Batch   320  of  10,844.    Elapsed: 0:03:59.
+05/22/2020 22:29:00 - INFO - src.trainer -   Validation loss: 0.607759 AUC: 0.74346 accuracy: 0.844500.
+05/22/2020 22:29:04 - INFO - src.trainer -   Batch   360  of  10,844.    Elapsed: 0:04:29.
+05/22/2020 22:29:30 - INFO - src.trainer -   Validation loss: 0.581078 AUC: 0.70608 accuracy: 0.865125.
+05/22/2020 22:29:34 - INFO - src.trainer -   Batch   400  of  10,844.    Elapsed: 0:04:59.
+05/22/2020 22:30:00 - INFO - src.trainer -   Validation loss: 0.612997 AUC: 0.76899 accuracy: 0.798750.
+05/22/2020 22:30:04 - INFO - src.trainer -   Batch   440  of  10,844.    Elapsed: 0:05:29.
+05/22/2020 22:30:30 - INFO - src.trainer -   Validation loss: 0.671057 AUC: 0.72173 accuracy: 0.575750.
+05/22/2020 22:30:34 - INFO - src.trainer -   Batch   480  of  10,844.    Elapsed: 0:05:59.
+05/22/2020 22:31:00 - INFO - src.trainer -   Validation loss: 0.659849 AUC: 0.73605 accuracy: 0.612375.
+05/22/2020 22:31:04 - INFO - src.trainer -   Batch   520  of  10,844.    Elapsed: 0:06:29.
+05/22/2020 22:31:30 - INFO - src.trainer -   Validation loss: 0.608271 AUC: 0.77481 accuracy: 0.759625.
+05/22/2020 22:31:34 - INFO - src.trainer -   Batch   560  of  10,844.    Elapsed: 0:06:58.
+05/22/2020 22:31:59 - INFO - src.trainer -   Validation loss: 0.527493 AUC: 0.71203 accuracy: 0.865625.
+05/22/2020 22:32:04 - INFO - src.trainer -   Batch   600  of  10,844.    Elapsed: 0:07:28.
+05/22/2020 22:32:29 - INFO - src.trainer -   Validation loss: 0.603816 AUC: 0.77290 accuracy: 0.739500.
+05/22/2020 22:32:33 - INFO - src.trainer -   Batch   640  of  10,844.    Elapsed: 0:07:58.
+05/22/2020 22:32:59 - INFO - src.trainer -   Validation loss: 0.660875 AUC: 0.73409 accuracy: 0.599500.
+05/22/2020 22:33:03 - INFO - src.trainer -   Batch   680  of  10,844.    Elapsed: 0:08:28.
+05/22/2020 22:33:29 - INFO - src.trainer -   Validation loss: 0.556400 AUC: 0.77006 accuracy: 0.801125.
+05/22/2020 22:33:33 - INFO - src.trainer -   Batch   720  of  10,844.    Elapsed: 0:08:58.
+05/22/2020 22:33:59 - INFO - src.trainer -   Validation loss: 0.536366 AUC: 0.76787 accuracy: 0.821625.
+05/22/2020 22:34:03 - INFO - src.trainer -   Batch   760  of  10,844.    Elapsed: 0:09:28.
+05/22/2020 22:34:29 - INFO - src.trainer -   Validation loss: 0.565861 AUC: 0.77588 accuracy: 0.768750.
+05/22/2020 22:34:33 - INFO - src.trainer -   Batch   800  of  10,844.    Elapsed: 0:09:58.
+05/22/2020 22:34:59 - INFO - src.trainer -   Validation loss: 0.588927 AUC: 0.77487 accuracy: 0.724250.
+05/22/2020 22:35:03 - INFO - src.trainer -   Batch   840  of  10,844.    Elapsed: 0:10:28.
+05/22/2020 22:35:29 - INFO - src.trainer -   Validation loss: 0.544870 AUC: 0.77255 accuracy: 0.780000.
+05/22/2020 22:35:33 - INFO - src.trainer -   Batch   880  of  10,844.    Elapsed: 0:10:58.
+05/22/2020 22:35:59 - INFO - src.trainer -   Validation loss: 0.555131 AUC: 0.77836 accuracy: 0.763375.
+05/22/2020 22:36:03 - INFO - src.trainer -   Batch   920  of  10,844.    Elapsed: 0:11:27.
+05/22/2020 22:36:28 - INFO - src.trainer -   Validation loss: 0.520916 AUC: 0.77298 accuracy: 0.796500.
+05/22/2020 22:36:33 - INFO - src.trainer -   Batch   960  of  10,844.    Elapsed: 0:11:57.
+05/22/2020 22:36:58 - INFO - src.trainer -   Validation loss: 0.477614 AUC: 0.75973 accuracy: 0.839375.
+05/22/2020 22:37:02 - INFO - src.trainer -   Batch 1,000  of  10,844.    Elapsed: 0:12:27.
+05/22/2020 22:37:28 - INFO - src.trainer -   Validation loss: 0.578731 AUC: 0.77783 accuracy: 0.719125.
+05/22/2020 22:37:32 - INFO - src.trainer -   Batch 1,040  of  10,844.    Elapsed: 0:12:57.
+05/22/2020 22:37:58 - INFO - src.trainer -   Validation loss: 0.555073 AUC: 0.78092 accuracy: 0.746875.
+05/22/2020 22:38:02 - INFO - src.trainer -   Batch 1,080  of  10,844.    Elapsed: 0:13:27.
+05/22/2020 22:38:28 - INFO - src.trainer -   Validation loss: 0.480498 AUC: 0.77559 accuracy: 0.825125.
+05/22/2020 22:38:32 - INFO - src.trainer -   Batch 1,120  of  10,844.    Elapsed: 0:13:57.
+05/22/2020 22:38:58 - INFO - src.trainer -   Validation loss: 0.521338 AUC: 0.78135 accuracy: 0.773500.
+05/22/2020 22:39:02 - INFO - src.trainer -   Batch 1,160  of  10,844.    Elapsed: 0:14:27.
+05/22/2020 22:39:28 - INFO - src.trainer -   Validation loss: 0.527778 AUC: 0.78357 accuracy: 0.763750.
+05/22/2020 22:39:32 - INFO - src.trainer -   Batch 1,200  of  10,844.    Elapsed: 0:14:57.
+05/22/2020 22:39:58 - INFO - src.trainer -   Validation loss: 0.471794 AUC: 0.77641 accuracy: 0.818625.
+05/22/2020 22:40:02 - INFO - src.trainer -   Batch 1,240  of  10,844.    Elapsed: 0:15:26.
+05/22/2020 22:40:27 - INFO - src.trainer -   Validation loss: 0.556316 AUC: 0.78226 accuracy: 0.730000.
+05/22/2020 22:40:32 - INFO - src.trainer -   Batch 1,280  of  10,844.    Elapsed: 0:15:56.
+05/22/2020 22:40:57 - INFO - src.trainer -   Validation loss: 0.596823 AUC: 0.76916 accuracy: 0.684750.
+05/22/2020 22:41:01 - INFO - src.trainer -   Batch 1,320  of  10,844.    Elapsed: 0:16:26.
+05/22/2020 22:41:27 - INFO - src.trainer -   Validation loss: 0.615656 AUC: 0.76130 accuracy: 0.663000.
+05/22/2020 22:41:31 - INFO - src.trainer -   Batch 1,360  of  10,844.    Elapsed: 0:16:56.
+05/22/2020 22:41:57 - INFO - src.trainer -   Validation loss: 0.464697 AUC: 0.77770 accuracy: 0.814625.
+05/22/2020 22:42:01 - INFO - src.trainer -   Batch 1,400  of  10,844.    Elapsed: 0:17:26.
+05/22/2020 22:42:27 - INFO - src.trainer -   Validation loss: 0.513172 AUC: 0.78435 accuracy: 0.764500.
+05/22/2020 22:42:31 - INFO - src.trainer -   Batch 1,440  of  10,844.    Elapsed: 0:17:56.
+05/22/2020 22:42:57 - INFO - src.trainer -   Validation loss: 0.514515 AUC: 0.78438 accuracy: 0.765125.
+05/22/2020 22:43:01 - INFO - src.trainer -   Batch 1,480  of  10,844.    Elapsed: 0:18:26.
+05/22/2020 22:43:27 - INFO - src.trainer -   Validation loss: 0.475754 AUC: 0.78485 accuracy: 0.795750.
+05/22/2020 22:43:31 - INFO - src.trainer -   Batch 1,520  of  10,844.    Elapsed: 0:18:56.
+05/22/2020 22:43:57 - INFO - src.trainer -   Validation loss: 0.412626 AUC: 0.76301 accuracy: 0.845500.
+05/22/2020 22:44:01 - INFO - src.trainer -   Batch 1,560  of  10,844.    Elapsed: 0:19:25.
+05/22/2020 22:44:26 - INFO - src.trainer -   Validation loss: 0.465114 AUC: 0.78218 accuracy: 0.801375.
+05/22/2020 22:44:31 - INFO - src.trainer -   Batch 1,600  of  10,844.    Elapsed: 0:19:55.
+05/22/2020 22:44:56 - INFO - src.trainer -   Validation loss: 0.427270 AUC: 0.77441 accuracy: 0.832125.
+05/22/2020 22:45:00 - INFO - src.trainer -   Batch 1,640  of  10,844.    Elapsed: 0:20:25.
+05/22/2020 22:45:26 - INFO - src.trainer -   Validation loss: 0.438031 AUC: 0.77925 accuracy: 0.824000.
+05/22/2020 22:45:30 - INFO - src.trainer -   Batch 1,680  of  10,844.    Elapsed: 0:20:55.
+05/22/2020 22:45:56 - INFO - src.trainer -   Validation loss: 0.457641 AUC: 0.78414 accuracy: 0.805250.
+05/22/2020 22:46:00 - INFO - src.trainer -   Batch 1,720  of  10,844.    Elapsed: 0:21:25.
+05/22/2020 22:46:26 - INFO - src.trainer -   Validation loss: 0.453875 AUC: 0.78351 accuracy: 0.808125.
+05/22/2020 22:46:30 - INFO - src.trainer -   Batch 1,760  of  10,844.    Elapsed: 0:21:55.
+05/22/2020 22:46:56 - INFO - src.trainer -   Validation loss: 0.437339 AUC: 0.78206 accuracy: 0.822000.
+05/22/2020 22:47:00 - INFO - src.trainer -   Batch 1,800  of  10,844.    Elapsed: 0:22:25.
+05/22/2020 22:47:26 - INFO - src.trainer -   Validation loss: 0.439041 AUC: 0.78310 accuracy: 0.820375.
+05/22/2020 22:47:30 - INFO - src.trainer -   Batch 1,840  of  10,844.    Elapsed: 0:22:55.
+05/22/2020 22:47:56 - INFO - src.trainer -   Validation loss: 0.462342 AUC: 0.78525 accuracy: 0.797000.
+05/22/2020 22:48:00 - INFO - src.trainer -   Batch 1,880  of  10,844.    Elapsed: 0:23:24.
+05/22/2020 22:48:25 - INFO - src.trainer -   Validation loss: 0.487991 AUC: 0.78697 accuracy: 0.776250.
+05/22/2020 22:48:30 - INFO - src.trainer -   Batch 1,920  of  10,844.    Elapsed: 0:23:54.
+05/22/2020 22:48:55 - INFO - src.trainer -   Validation loss: 0.423803 AUC: 0.77977 accuracy: 0.827125.
+05/22/2020 22:48:59 - INFO - src.trainer -   Batch 1,960  of  10,844.    Elapsed: 0:24:24.
+05/22/2020 22:49:25 - INFO - src.trainer -   Validation loss: 0.418822 AUC: 0.78021 accuracy: 0.829000.
+05/22/2020 22:49:29 - INFO - src.trainer -   Batch 2,000  of  10,844.    Elapsed: 0:24:54.
+05/22/2020 22:49:55 - INFO - src.trainer -   Validation loss: 0.450633 AUC: 0.78636 accuracy: 0.803375.
+05/22/2020 22:49:59 - INFO - src.trainer -   Batch 2,040  of  10,844.    Elapsed: 0:25:24.
+05/22/2020 22:50:25 - INFO - src.trainer -   Validation loss: 0.411342 AUC: 0.77829 accuracy: 0.832500.
+05/22/2020 22:50:29 - INFO - src.trainer -   Batch 2,080  of  10,844.    Elapsed: 0:25:54.
+05/22/2020 22:50:55 - INFO - src.trainer -   Validation loss: 0.457491 AUC: 0.78788 accuracy: 0.796375.
+05/22/2020 22:50:59 - INFO - src.trainer -   Batch 2,120  of  10,844.    Elapsed: 0:26:24.
+05/22/2020 22:51:25 - INFO - src.trainer -   Validation loss: 0.462111 AUC: 0.78810 accuracy: 0.790000.
+05/22/2020 22:51:29 - INFO - src.trainer -   Batch 2,160  of  10,844.    Elapsed: 0:26:54.
+05/22/2020 22:51:55 - INFO - src.trainer -   Validation loss: 0.521262 AUC: 0.79245 accuracy: 0.749500.
+05/22/2020 22:51:59 - INFO - src.trainer -   Batch 2,200  of  10,844.    Elapsed: 0:27:23.
+05/22/2020 22:52:24 - INFO - src.trainer -   Validation loss: 0.454386 AUC: 0.78847 accuracy: 0.796250.
+05/22/2020 22:52:29 - INFO - src.trainer -   Batch 2,240  of  10,844.    Elapsed: 0:27:53.
+05/22/2020 22:52:54 - INFO - src.trainer -   Validation loss: 0.442086 AUC: 0.78961 accuracy: 0.806625.
+05/22/2020 22:52:58 - INFO - src.trainer -   Batch 2,280  of  10,844.    Elapsed: 0:28:23.
+05/22/2020 22:53:24 - INFO - src.trainer -   Validation loss: 0.466029 AUC: 0.79032 accuracy: 0.784750.
+05/22/2020 22:53:28 - INFO - src.trainer -   Batch 2,320  of  10,844.    Elapsed: 0:28:53.
+05/22/2020 22:53:54 - INFO - src.trainer -   Validation loss: 0.475107 AUC: 0.79151 accuracy: 0.780000.
+05/22/2020 22:53:58 - INFO - src.trainer -   Batch 2,360  of  10,844.    Elapsed: 0:29:23.
+05/22/2020 22:54:24 - INFO - src.trainer -   Validation loss: 0.435808 AUC: 0.78972 accuracy: 0.809625.
+05/22/2020 22:54:28 - INFO - src.trainer -   Batch 2,400  of  10,844.    Elapsed: 0:29:53.
+05/22/2020 22:54:54 - INFO - src.trainer -   Validation loss: 0.426385 AUC: 0.78791 accuracy: 0.815000.
+05/22/2020 22:54:58 - INFO - src.trainer -   Batch 2,440  of  10,844.    Elapsed: 0:30:23.
+05/22/2020 22:55:24 - INFO - src.trainer -   Validation loss: 0.431889 AUC: 0.78913 accuracy: 0.812000.
+05/22/2020 22:55:28 - INFO - src.trainer -   Batch 2,480  of  10,844.    Elapsed: 0:30:53.
+05/22/2020 22:55:54 - INFO - src.trainer -   Validation loss: 0.455729 AUC: 0.79010 accuracy: 0.793375.
+05/22/2020 22:55:58 - INFO - src.trainer -   Batch 2,520  of  10,844.    Elapsed: 0:31:22.
+05/22/2020 22:56:23 - INFO - src.trainer -   Validation loss: 0.454318 AUC: 0.79128 accuracy: 0.794250.
+05/22/2020 22:56:28 - INFO - src.trainer -   Batch 2,560  of  10,844.    Elapsed: 0:31:52.
+05/22/2020 22:56:53 - INFO - src.trainer -   Validation loss: 0.466652 AUC: 0.79236 accuracy: 0.785375.
+05/22/2020 22:56:57 - INFO - src.trainer -   Batch 2,600  of  10,844.    Elapsed: 0:32:22.
+05/22/2020 22:57:23 - INFO - src.trainer -   Validation loss: 0.389398 AUC: 0.77551 accuracy: 0.837375.
+05/22/2020 22:57:27 - INFO - src.trainer -   Batch 2,640  of  10,844.    Elapsed: 0:32:52.
+05/22/2020 22:57:53 - INFO - src.trainer -   Validation loss: 0.446933 AUC: 0.79471 accuracy: 0.802875.
+05/22/2020 22:57:57 - INFO - src.trainer -   Batch 2,680  of  10,844.    Elapsed: 0:33:22.
+05/22/2020 22:58:23 - INFO - src.trainer -   Validation loss: 0.419645 AUC: 0.78971 accuracy: 0.822000.
+05/22/2020 22:58:27 - INFO - src.trainer -   Batch 2,720  of  10,844.    Elapsed: 0:33:52.
+05/22/2020 22:58:53 - INFO - src.trainer -   Validation loss: 0.418843 AUC: 0.78923 accuracy: 0.820625.
+05/22/2020 22:58:57 - INFO - src.trainer -   Batch 2,760  of  10,844.    Elapsed: 0:34:22.
+05/22/2020 22:59:23 - INFO - src.trainer -   Validation loss: 0.400754 AUC: 0.78719 accuracy: 0.833500.
+05/22/2020 22:59:27 - INFO - src.trainer -   Batch 2,800  of  10,844.    Elapsed: 0:34:52.
+05/22/2020 22:59:53 - INFO - src.trainer -   Validation loss: 0.458623 AUC: 0.79745 accuracy: 0.792875.
+05/22/2020 22:59:57 - INFO - src.trainer -   Batch 2,840  of  10,844.    Elapsed: 0:35:22.
+05/22/2020 23:00:23 - INFO - src.trainer -   Validation loss: 0.472579 AUC: 0.79642 accuracy: 0.781000.
+05/22/2020 23:00:27 - INFO - src.trainer -   Batch 2,880  of  10,844.    Elapsed: 0:35:51.
+05/22/2020 23:00:52 - INFO - src.trainer -   Validation loss: 0.444504 AUC: 0.79678 accuracy: 0.801875.
+05/22/2020 23:00:57 - INFO - src.trainer -   Batch 2,920  of  10,844.    Elapsed: 0:36:21.
+05/22/2020 23:01:22 - INFO - src.trainer -   Validation loss: 0.463629 AUC: 0.79827 accuracy: 0.788625.
+05/22/2020 23:01:26 - INFO - src.trainer -   Batch 2,960  of  10,844.    Elapsed: 0:36:51.
+05/22/2020 23:01:52 - INFO - src.trainer -   Validation loss: 0.471324 AUC: 0.79949 accuracy: 0.783375.
+05/22/2020 23:01:56 - INFO - src.trainer -   Batch 3,000  of  10,844.    Elapsed: 0:37:21.
+05/22/2020 23:02:22 - INFO - src.trainer -   Validation loss: 0.442650 AUC: 0.79771 accuracy: 0.802875.
+05/22/2020 23:02:26 - INFO - src.trainer -   Batch 3,040  of  10,844.    Elapsed: 0:37:51.
+05/22/2020 23:02:52 - INFO - src.trainer -   Validation loss: 0.456376 AUC: 0.79982 accuracy: 0.795750.
+05/22/2020 23:02:56 - INFO - src.trainer -   Batch 3,080  of  10,844.    Elapsed: 0:38:21.
+05/22/2020 23:03:22 - INFO - src.trainer -   Validation loss: 0.418666 AUC: 0.79393 accuracy: 0.819000.
+05/22/2020 23:03:26 - INFO - src.trainer -   Batch 3,120  of  10,844.    Elapsed: 0:38:51.
+05/22/2020 23:03:52 - INFO - src.trainer -   Validation loss: 0.384929 AUC: 0.78213 accuracy: 0.839000.
+05/22/2020 23:03:56 - INFO - src.trainer -   Batch 3,160  of  10,844.    Elapsed: 0:39:21.
+05/22/2020 23:04:22 - INFO - src.trainer -   Validation loss: 0.403324 AUC: 0.79041 accuracy: 0.829375.
+05/22/2020 23:04:26 - INFO - src.trainer -   Batch 3,200  of  10,844.    Elapsed: 0:39:51.
+05/22/2020 23:04:51 - INFO - src.trainer -   Validation loss: 0.432152 AUC: 0.79593 accuracy: 0.808875.
+05/22/2020 23:04:56 - INFO - src.trainer -   Batch 3,240  of  10,844.    Elapsed: 0:40:20.
+05/22/2020 23:05:21 - INFO - src.trainer -   Validation loss: 0.451356 AUC: 0.80152 accuracy: 0.798625.
+05/22/2020 23:05:26 - INFO - src.trainer -   Batch 3,280  of  10,844.    Elapsed: 0:40:50.
+05/22/2020 23:05:51 - INFO - src.trainer -   Validation loss: 0.480570 AUC: 0.80093 accuracy: 0.779625.
+05/22/2020 23:05:55 - INFO - src.trainer -   Batch 3,320  of  10,844.    Elapsed: 0:41:20.
+05/22/2020 23:06:21 - INFO - src.trainer -   Validation loss: 0.415747 AUC: 0.79578 accuracy: 0.819875.
+05/22/2020 23:06:25 - INFO - src.trainer -   Batch 3,360  of  10,844.    Elapsed: 0:41:50.
+05/22/2020 23:06:51 - INFO - src.trainer -   Validation loss: 0.424182 AUC: 0.79633 accuracy: 0.814625.
+05/22/2020 23:06:55 - INFO - src.trainer -   Batch 3,400  of  10,844.    Elapsed: 0:42:20.
+05/22/2020 23:07:21 - INFO - src.trainer -   Validation loss: 0.366838 AUC: 0.77399 accuracy: 0.848875.
+05/22/2020 23:07:25 - INFO - src.trainer -   Batch 3,440  of  10,844.    Elapsed: 0:42:50.
+05/22/2020 23:07:51 - INFO - src.trainer -   Validation loss: 0.394979 AUC: 0.79019 accuracy: 0.833500.
+05/22/2020 23:07:55 - INFO - src.trainer -   Batch 3,480  of  10,844.    Elapsed: 0:43:20.
+05/22/2020 23:08:21 - INFO - src.trainer -   Validation loss: 0.379496 AUC: 0.78331 accuracy: 0.842125.
+05/22/2020 23:08:25 - INFO - src.trainer -   Batch 3,520  of  10,844.    Elapsed: 0:43:50.
+05/22/2020 23:08:51 - INFO - src.trainer -   Validation loss: 0.427157 AUC: 0.79741 accuracy: 0.811375.
+05/22/2020 23:08:55 - INFO - src.trainer -   Batch 3,560  of  10,844.    Elapsed: 0:44:19.
+05/22/2020 23:09:20 - INFO - src.trainer -   Validation loss: 0.395098 AUC: 0.79300 accuracy: 0.834875.
+05/22/2020 23:09:25 - INFO - src.trainer -   Batch 3,600  of  10,844.    Elapsed: 0:44:49.
+05/22/2020 23:09:50 - INFO - src.trainer -   Validation loss: 0.453484 AUC: 0.80388 accuracy: 0.797000.
+05/22/2020 23:09:54 - INFO - src.trainer -   Batch 3,640  of  10,844.    Elapsed: 0:45:19.
+05/22/2020 23:10:20 - INFO - src.trainer -   Validation loss: 0.443597 AUC: 0.80303 accuracy: 0.801750.
+05/22/2020 23:10:24 - INFO - src.trainer -   Batch 3,680  of  10,844.    Elapsed: 0:45:49.
+05/22/2020 23:10:50 - INFO - src.trainer -   Validation loss: 0.423443 AUC: 0.79604 accuracy: 0.811875.
+05/22/2020 23:10:54 - INFO - src.trainer -   Batch 3,720  of  10,844.    Elapsed: 0:46:19.
+05/22/2020 23:11:20 - INFO - src.trainer -   Validation loss: 0.441604 AUC: 0.80403 accuracy: 0.804000.
+05/22/2020 23:11:24 - INFO - src.trainer -   Batch 3,760  of  10,844.    Elapsed: 0:46:49.
+05/22/2020 23:11:50 - INFO - src.trainer -   Validation loss: 0.403695 AUC: 0.79296 accuracy: 0.825250.
+05/22/2020 23:11:54 - INFO - src.trainer -   Batch 3,800  of  10,844.    Elapsed: 0:47:19.
+05/22/2020 23:12:20 - INFO - src.trainer -   Validation loss: 0.408422 AUC: 0.79404 accuracy: 0.823125.
+05/22/2020 23:12:24 - INFO - src.trainer -   Batch 3,840  of  10,844.    Elapsed: 0:47:49.
+05/22/2020 23:12:50 - INFO - src.trainer -   Validation loss: 0.492613 AUC: 0.80353 accuracy: 0.770500.
+05/22/2020 23:12:54 - INFO - src.trainer -   Batch 3,880  of  10,844.    Elapsed: 0:48:18.
+05/22/2020 23:13:19 - INFO - src.trainer -   Validation loss: 0.458862 AUC: 0.80270 accuracy: 0.793875.
+05/22/2020 23:13:24 - INFO - src.trainer -   Batch 3,920  of  10,844.    Elapsed: 0:48:48.
+05/22/2020 23:13:49 - INFO - src.trainer -   Validation loss: 0.412858 AUC: 0.79914 accuracy: 0.822750.
+05/22/2020 23:13:53 - INFO - src.trainer -   Batch 3,960  of  10,844.    Elapsed: 0:49:18.
+05/22/2020 23:14:19 - INFO - src.trainer -   Validation loss: 0.428841 AUC: 0.80095 accuracy: 0.812875.
+05/22/2020 23:14:23 - INFO - src.trainer -   Batch 4,000  of  10,844.    Elapsed: 0:49:48.
+05/22/2020 23:14:49 - INFO - src.trainer -   Validation loss: 0.468587 AUC: 0.80389 accuracy: 0.786875.
+05/22/2020 23:14:53 - INFO - src.trainer -   Batch 4,040  of  10,844.    Elapsed: 0:50:18.
+05/22/2020 23:15:19 - INFO - src.trainer -   Validation loss: 0.436512 AUC: 0.80354 accuracy: 0.808250.
+05/22/2020 23:15:23 - INFO - src.trainer -   Batch 4,080  of  10,844.    Elapsed: 0:50:48.
+05/22/2020 23:15:49 - INFO - src.trainer -   Validation loss: 0.431431 AUC: 0.80221 accuracy: 0.809375.
+05/22/2020 23:15:53 - INFO - src.trainer -   Batch 4,120  of  10,844.    Elapsed: 0:51:18.
+05/22/2020 23:16:19 - INFO - src.trainer -   Validation loss: 0.443941 AUC: 0.80373 accuracy: 0.801250.
+05/22/2020 23:16:23 - INFO - src.trainer -   Batch 4,160  of  10,844.    Elapsed: 0:51:48.
+05/22/2020 23:16:49 - INFO - src.trainer -   Validation loss: 0.365920 AUC: 0.78216 accuracy: 0.848625.
+05/22/2020 23:16:53 - INFO - src.trainer -   Batch 4,200  of  10,844.    Elapsed: 0:52:17.
+05/22/2020 23:17:18 - INFO - src.trainer -   Validation loss: 0.415479 AUC: 0.80021 accuracy: 0.818375.
+05/22/2020 23:17:23 - INFO - src.trainer -   Batch 4,240  of  10,844.    Elapsed: 0:52:47.
+05/22/2020 23:17:48 - INFO - src.trainer -   Validation loss: 0.406675 AUC: 0.79718 accuracy: 0.823375.
+05/22/2020 23:17:52 - INFO - src.trainer -   Batch 4,280  of  10,844.    Elapsed: 0:53:17.
+05/22/2020 23:18:18 - INFO - src.trainer -   Validation loss: 0.398061 AUC: 0.79584 accuracy: 0.829000.
+05/22/2020 23:18:22 - INFO - src.trainer -   Batch 4,320  of  10,844.    Elapsed: 0:53:47.
+05/22/2020 23:18:48 - INFO - src.trainer -   Validation loss: 0.413205 AUC: 0.80032 accuracy: 0.820250.
+05/22/2020 23:18:52 - INFO - src.trainer -   Batch 4,360  of  10,844.    Elapsed: 0:54:17.
+05/22/2020 23:19:18 - INFO - src.trainer -   Validation loss: 0.455310 AUC: 0.80422 accuracy: 0.793625.
+05/22/2020 23:19:22 - INFO - src.trainer -   Batch 4,400  of  10,844.    Elapsed: 0:54:47.
+05/22/2020 23:19:48 - INFO - src.trainer -   Validation loss: 0.426682 AUC: 0.80432 accuracy: 0.812375.
+05/22/2020 23:19:52 - INFO - src.trainer -   Batch 4,440  of  10,844.    Elapsed: 0:55:17.
+05/22/2020 23:20:18 - INFO - src.trainer -   Validation loss: 0.436452 AUC: 0.80502 accuracy: 0.805125.
+05/22/2020 23:20:22 - INFO - src.trainer -   Batch 4,480  of  10,844.    Elapsed: 0:55:47.
+05/22/2020 23:20:48 - INFO - src.trainer -   Validation loss: 0.381250 AUC: 0.79259 accuracy: 0.839250.
+05/22/2020 23:20:52 - INFO - src.trainer -   Batch 4,520  of  10,844.    Elapsed: 0:56:16.
+05/22/2020 23:21:17 - INFO - src.trainer -   Validation loss: 0.507469 AUC: 0.80368 accuracy: 0.758375.
+05/22/2020 23:21:22 - INFO - src.trainer -   Batch 4,560  of  10,844.    Elapsed: 0:56:46.
+05/22/2020 23:21:47 - INFO - src.trainer -   Validation loss: 0.510628 AUC: 0.80387 accuracy: 0.757000.
+05/22/2020 23:21:51 - INFO - src.trainer -   Batch 4,600  of  10,844.    Elapsed: 0:57:16.
+05/22/2020 23:22:17 - INFO - src.trainer -   Validation loss: 0.395033 AUC: 0.79599 accuracy: 0.831500.
+05/22/2020 23:22:21 - INFO - src.trainer -   Batch 4,640  of  10,844.    Elapsed: 0:57:46.
+05/22/2020 23:22:47 - INFO - src.trainer -   Validation loss: 0.474310 AUC: 0.80718 accuracy: 0.782875.
+05/22/2020 23:22:51 - INFO - src.trainer -   Batch 4,680  of  10,844.    Elapsed: 0:58:16.
+05/22/2020 23:23:17 - INFO - src.trainer -   Validation loss: 0.404737 AUC: 0.80069 accuracy: 0.826500.
+05/22/2020 23:23:21 - INFO - src.trainer -   Batch 4,720  of  10,844.    Elapsed: 0:58:46.
+05/22/2020 23:23:47 - INFO - src.trainer -   Validation loss: 0.425082 AUC: 0.80480 accuracy: 0.813750.
+05/22/2020 23:23:51 - INFO - src.trainer -   Batch 4,760  of  10,844.    Elapsed: 0:59:16.
+05/22/2020 23:24:17 - INFO - src.trainer -   Validation loss: 0.424329 AUC: 0.80365 accuracy: 0.813500.
+05/22/2020 23:24:21 - INFO - src.trainer -   Batch 4,800  of  10,844.    Elapsed: 0:59:46.
+05/22/2020 23:24:47 - INFO - src.trainer -   Validation loss: 0.413143 AUC: 0.80187 accuracy: 0.821750.
+05/22/2020 23:24:51 - INFO - src.trainer -   Batch 4,840  of  10,844.    Elapsed: 1:00:15.
+05/22/2020 23:25:16 - INFO - src.trainer -   Validation loss: 0.385961 AUC: 0.79251 accuracy: 0.835750.
+05/22/2020 23:25:21 - INFO - src.trainer -   Batch 4,880  of  10,844.    Elapsed: 1:00:45.
+05/22/2020 23:25:46 - INFO - src.trainer -   Validation loss: 0.427803 AUC: 0.80657 accuracy: 0.812250.
+05/22/2020 23:25:50 - INFO - src.trainer -   Batch 4,920  of  10,844.    Elapsed: 1:01:15.
+05/22/2020 23:26:16 - INFO - src.trainer -   Validation loss: 0.391756 AUC: 0.79540 accuracy: 0.831625.
+05/22/2020 23:26:20 - INFO - src.trainer -   Batch 4,960  of  10,844.    Elapsed: 1:01:45.
+05/22/2020 23:26:46 - INFO - src.trainer -   Validation loss: 0.468353 AUC: 0.80747 accuracy: 0.785625.
+05/22/2020 23:26:50 - INFO - src.trainer -   Batch 5,000  of  10,844.    Elapsed: 1:02:15.
+05/22/2020 23:27:16 - INFO - src.trainer -   Validation loss: 0.442230 AUC: 0.80517 accuracy: 0.800875.
+05/22/2020 23:27:20 - INFO - src.trainer -   Batch 5,040  of  10,844.    Elapsed: 1:02:45.
+05/22/2020 23:27:46 - INFO - src.trainer -   Validation loss: 0.410700 AUC: 0.80036 accuracy: 0.820875.
+05/22/2020 23:27:50 - INFO - src.trainer -   Batch 5,080  of  10,844.    Elapsed: 1:03:15.
+05/22/2020 23:28:16 - INFO - src.trainer -   Validation loss: 0.447970 AUC: 0.80470 accuracy: 0.796125.
+05/22/2020 23:28:20 - INFO - src.trainer -   Batch 5,120  of  10,844.    Elapsed: 1:03:45.
+05/22/2020 23:28:46 - INFO - src.trainer -   Validation loss: 0.432207 AUC: 0.80754 accuracy: 0.809375.
+05/22/2020 23:28:50 - INFO - src.trainer -   Batch 5,160  of  10,844.    Elapsed: 1:04:15.
+05/22/2020 23:29:15 - INFO - src.trainer -   Validation loss: 0.435057 AUC: 0.80617 accuracy: 0.806500.
+05/22/2020 23:29:20 - INFO - src.trainer -   Batch 5,200  of  10,844.    Elapsed: 1:04:44.
+05/22/2020 23:29:45 - INFO - src.trainer -   Validation loss: 0.424806 AUC: 0.80705 accuracy: 0.814750.
+05/22/2020 23:29:50 - INFO - src.trainer -   Batch 5,240  of  10,844.    Elapsed: 1:05:14.
+05/22/2020 23:30:15 - INFO - src.trainer -   Validation loss: 0.464669 AUC: 0.80788 accuracy: 0.788000.
+05/22/2020 23:30:19 - INFO - src.trainer -   Batch 5,280  of  10,844.    Elapsed: 1:05:44.
+05/22/2020 23:30:45 - INFO - src.trainer -   Validation loss: 0.381113 AUC: 0.79155 accuracy: 0.839750.
+05/22/2020 23:30:49 - INFO - src.trainer -   Batch 5,320  of  10,844.    Elapsed: 1:06:14.
+05/22/2020 23:31:15 - INFO - src.trainer -   Validation loss: 0.396216 AUC: 0.79876 accuracy: 0.831125.
+05/22/2020 23:31:19 - INFO - src.trainer -   Batch 5,360  of  10,844.    Elapsed: 1:06:44.
+05/22/2020 23:31:45 - INFO - src.trainer -   Validation loss: 0.420829 AUC: 0.80635 accuracy: 0.816375.
+05/22/2020 23:31:49 - INFO - src.trainer -   Batch 5,400  of  10,844.    Elapsed: 1:07:14.
+05/22/2020 23:32:15 - INFO - src.trainer -   Validation loss: 0.429432 AUC: 0.80631 accuracy: 0.810125.
+05/22/2020 23:32:19 - INFO - src.trainer -   Batch 5,440  of  10,844.    Elapsed: 1:07:44.
+05/22/2020 23:32:45 - INFO - src.trainer -   Validation loss: 0.482159 AUC: 0.80648 accuracy: 0.776625.
+05/22/2020 23:32:49 - INFO - src.trainer -   Batch 5,480  of  10,844.    Elapsed: 1:08:14.
+05/22/2020 23:33:15 - INFO - src.trainer -   Validation loss: 0.457315 AUC: 0.80577 accuracy: 0.791750.
+05/22/2020 23:33:19 - INFO - src.trainer -   Batch 5,520  of  10,844.    Elapsed: 1:08:43.
+05/22/2020 23:33:44 - INFO - src.trainer -   Validation loss: 0.405927 AUC: 0.80424 accuracy: 0.826875.
+05/22/2020 23:33:49 - INFO - src.trainer -   Batch 5,560  of  10,844.    Elapsed: 1:09:13.
+05/22/2020 23:34:14 - INFO - src.trainer -   Validation loss: 0.364381 AUC: 0.78360 accuracy: 0.848250.
+05/22/2020 23:34:18 - INFO - src.trainer -   Batch 5,600  of  10,844.    Elapsed: 1:09:43.
+05/22/2020 23:34:44 - INFO - src.trainer -   Validation loss: 0.399147 AUC: 0.80028 accuracy: 0.829750.
+05/22/2020 23:34:48 - INFO - src.trainer -   Batch 5,640  of  10,844.    Elapsed: 1:10:13.
+05/22/2020 23:35:14 - INFO - src.trainer -   Validation loss: 0.381044 AUC: 0.79255 accuracy: 0.838625.
+05/22/2020 23:35:18 - INFO - src.trainer -   Batch 5,680  of  10,844.    Elapsed: 1:10:43.
+05/22/2020 23:35:44 - INFO - src.trainer -   Validation loss: 0.424624 AUC: 0.80823 accuracy: 0.814500.
+05/22/2020 23:35:48 - INFO - src.trainer -   Batch 5,720  of  10,844.    Elapsed: 1:11:13.
+05/22/2020 23:36:14 - INFO - src.trainer -   Validation loss: 0.375486 AUC: 0.79018 accuracy: 0.841375.
+05/22/2020 23:36:18 - INFO - src.trainer -   Batch 5,760  of  10,844.    Elapsed: 1:11:43.
+05/22/2020 23:36:44 - INFO - src.trainer -   Validation loss: 0.436715 AUC: 0.80643 accuracy: 0.805250.
+05/22/2020 23:36:48 - INFO - src.trainer -   Batch 5,800  of  10,844.    Elapsed: 1:12:13.
+05/22/2020 23:37:14 - INFO - src.trainer -   Validation loss: 0.374145 AUC: 0.79177 accuracy: 0.842375.
+05/22/2020 23:37:18 - INFO - src.trainer -   Batch 5,840  of  10,844.    Elapsed: 1:12:43.
+05/22/2020 23:37:44 - INFO - src.trainer -   Validation loss: 0.403681 AUC: 0.80361 accuracy: 0.826375.
+05/22/2020 23:37:48 - INFO - src.trainer -   Batch 5,880  of  10,844.    Elapsed: 1:13:12.
+05/22/2020 23:38:13 - INFO - src.trainer -   Validation loss: 0.387510 AUC: 0.79606 accuracy: 0.835000.
+05/22/2020 23:38:18 - INFO - src.trainer -   Batch 5,920  of  10,844.    Elapsed: 1:13:42.
+05/22/2020 23:38:43 - INFO - src.trainer -   Validation loss: 0.407481 AUC: 0.80631 accuracy: 0.825875.
+05/22/2020 23:38:48 - INFO - src.trainer -   Batch 5,960  of  10,844.    Elapsed: 1:14:12.
+05/22/2020 23:39:13 - INFO - src.trainer -   Validation loss: 0.434591 AUC: 0.80558 accuracy: 0.806625.
+05/22/2020 23:39:17 - INFO - src.trainer -   Batch 6,000  of  10,844.    Elapsed: 1:14:42.
+05/22/2020 23:39:43 - INFO - src.trainer -   Validation loss: 0.408898 AUC: 0.80771 accuracy: 0.826000.
+05/22/2020 23:39:47 - INFO - src.trainer -   Batch 6,040  of  10,844.    Elapsed: 1:15:12.
+05/22/2020 23:40:13 - INFO - src.trainer -   Validation loss: 0.462427 AUC: 0.80718 accuracy: 0.788500.
+05/22/2020 23:40:17 - INFO - src.trainer -   Batch 6,080  of  10,844.    Elapsed: 1:15:42.
+05/22/2020 23:40:43 - INFO - src.trainer -   Validation loss: 0.430099 AUC: 0.80698 accuracy: 0.809000.
+05/22/2020 23:40:47 - INFO - src.trainer -   Batch 6,120  of  10,844.    Elapsed: 1:16:12.
+05/22/2020 23:41:13 - INFO - src.trainer -   Validation loss: 0.399322 AUC: 0.80294 accuracy: 0.829750.
+05/22/2020 23:41:17 - INFO - src.trainer -   Batch 6,160  of  10,844.    Elapsed: 1:16:42.
+05/22/2020 23:41:43 - INFO - src.trainer -   Validation loss: 0.468817 AUC: 0.80906 accuracy: 0.785500.
+05/22/2020 23:41:47 - INFO - src.trainer -   Batch 6,200  of  10,844.    Elapsed: 1:17:12.
+05/22/2020 23:42:13 - INFO - src.trainer -   Validation loss: 0.448053 AUC: 0.80673 accuracy: 0.797875.
+05/22/2020 23:42:17 - INFO - src.trainer -   Batch 6,240  of  10,844.    Elapsed: 1:17:42.
+05/22/2020 23:42:43 - INFO - src.trainer -   Validation loss: 0.401077 AUC: 0.80605 accuracy: 0.829375.
+05/22/2020 23:42:47 - INFO - src.trainer -   Batch 6,280  of  10,844.    Elapsed: 1:18:12.
+05/22/2020 23:43:13 - INFO - src.trainer -   Validation loss: 0.393533 AUC: 0.80242 accuracy: 0.832250.
+05/22/2020 23:43:17 - INFO - src.trainer -   Batch 6,320  of  10,844.    Elapsed: 1:18:42.
+05/22/2020 23:43:43 - INFO - src.trainer -   Validation loss: 0.428513 AUC: 0.80676 accuracy: 0.809750.
+05/22/2020 23:43:47 - INFO - src.trainer -   Batch 6,360  of  10,844.    Elapsed: 1:19:11.
+05/22/2020 23:44:12 - INFO - src.trainer -   Validation loss: 0.440869 AUC: 0.80647 accuracy: 0.801375.
+05/22/2020 23:44:17 - INFO - src.trainer -   Batch 6,400  of  10,844.    Elapsed: 1:19:41.
+05/22/2020 23:44:42 - INFO - src.trainer -   Validation loss: 0.434493 AUC: 0.80713 accuracy: 0.805875.
+05/22/2020 23:44:47 - INFO - src.trainer -   Batch 6,440  of  10,844.    Elapsed: 1:20:11.
+05/22/2020 23:45:12 - INFO - src.trainer -   Validation loss: 0.430863 AUC: 0.80779 accuracy: 0.808125.
+05/22/2020 23:45:16 - INFO - src.trainer -   Batch 6,480  of  10,844.    Elapsed: 1:20:41.
+05/22/2020 23:45:42 - INFO - src.trainer -   Validation loss: 0.401452 AUC: 0.80594 accuracy: 0.828625.
+05/22/2020 23:45:46 - INFO - src.trainer -   Batch 6,520  of  10,844.    Elapsed: 1:21:11.
+05/22/2020 23:46:12 - INFO - src.trainer -   Validation loss: 0.436195 AUC: 0.80606 accuracy: 0.804625.
+05/22/2020 23:46:16 - INFO - src.trainer -   Batch 6,560  of  10,844.    Elapsed: 1:21:41.
+05/22/2020 23:46:42 - INFO - src.trainer -   Validation loss: 0.406727 AUC: 0.80627 accuracy: 0.825250.
+05/22/2020 23:46:46 - INFO - src.trainer -   Batch 6,600  of  10,844.    Elapsed: 1:22:11.
+05/22/2020 23:47:12 - INFO - src.trainer -   Validation loss: 0.401998 AUC: 0.80601 accuracy: 0.828750.
+05/22/2020 23:47:16 - INFO - src.trainer -   Batch 6,640  of  10,844.    Elapsed: 1:22:41.
+05/22/2020 23:47:42 - INFO - src.trainer -   Validation loss: 0.458015 AUC: 0.80740 accuracy: 0.791125.
+05/22/2020 23:47:46 - INFO - src.trainer -   Batch 6,680  of  10,844.    Elapsed: 1:23:11.
+05/22/2020 23:48:12 - INFO - src.trainer -   Validation loss: 0.424099 AUC: 0.80654 accuracy: 0.812750.
+05/22/2020 23:48:16 - INFO - src.trainer -   Batch 6,720  of  10,844.    Elapsed: 1:23:41.
+05/22/2020 23:48:42 - INFO - src.trainer -   Validation loss: 0.452040 AUC: 0.80836 accuracy: 0.795000.
+05/22/2020 23:48:46 - INFO - src.trainer -   Batch 6,760  of  10,844.    Elapsed: 1:24:10.
+05/22/2020 23:49:11 - INFO - src.trainer -   Validation loss: 0.380079 AUC: 0.79628 accuracy: 0.838750.
+05/22/2020 23:49:16 - INFO - src.trainer -   Batch 6,800  of  10,844.    Elapsed: 1:24:40.
+05/22/2020 23:49:41 - INFO - src.trainer -   Validation loss: 0.434670 AUC: 0.80669 accuracy: 0.805125.
+05/22/2020 23:49:45 - INFO - src.trainer -   Batch 6,840  of  10,844.    Elapsed: 1:25:10.
+05/22/2020 23:50:11 - INFO - src.trainer -   Validation loss: 0.465271 AUC: 0.80773 accuracy: 0.786625.
+05/22/2020 23:50:15 - INFO - src.trainer -   Batch 6,880  of  10,844.    Elapsed: 1:25:40.
+05/22/2020 23:50:41 - INFO - src.trainer -   Validation loss: 0.392371 AUC: 0.80294 accuracy: 0.832000.
+05/22/2020 23:50:45 - INFO - src.trainer -   Batch 6,920  of  10,844.    Elapsed: 1:26:10.
+05/22/2020 23:51:11 - INFO - src.trainer -   Validation loss: 0.463050 AUC: 0.80784 accuracy: 0.787375.
+05/22/2020 23:51:15 - INFO - src.trainer -   Batch 6,960  of  10,844.    Elapsed: 1:26:40.
+05/22/2020 23:51:41 - INFO - src.trainer -   Validation loss: 0.436969 AUC: 0.80636 accuracy: 0.804000.
+05/22/2020 23:51:45 - INFO - src.trainer -   Batch 7,000  of  10,844.    Elapsed: 1:27:10.
+05/22/2020 23:52:11 - INFO - src.trainer -   Validation loss: 0.445942 AUC: 0.80787 accuracy: 0.798125.
+05/22/2020 23:52:15 - INFO - src.trainer -   Batch 7,040  of  10,844.    Elapsed: 1:27:40.
+05/22/2020 23:52:41 - INFO - src.trainer -   Validation loss: 0.393417 AUC: 0.80312 accuracy: 0.831750.
+05/22/2020 23:52:45 - INFO - src.trainer -   Batch 7,080  of  10,844.    Elapsed: 1:28:10.
+05/22/2020 23:53:11 - INFO - src.trainer -   Validation loss: 0.421101 AUC: 0.80591 accuracy: 0.813375.
+05/22/2020 23:53:15 - INFO - src.trainer -   Batch 7,120  of  10,844.    Elapsed: 1:28:39.
+05/22/2020 23:53:40 - INFO - src.trainer -   Validation loss: 0.402298 AUC: 0.80631 accuracy: 0.827000.
+05/22/2020 23:53:45 - INFO - src.trainer -   Batch 7,160  of  10,844.    Elapsed: 1:29:09.
+05/22/2020 23:54:10 - INFO - src.trainer -   Validation loss: 0.423639 AUC: 0.80683 accuracy: 0.812125.
+05/22/2020 23:54:15 - INFO - src.trainer -   Batch 7,200  of  10,844.    Elapsed: 1:29:39.
+05/22/2020 23:54:40 - INFO - src.trainer -   Validation loss: 0.428699 AUC: 0.80657 accuracy: 0.808875.
+05/22/2020 23:54:44 - INFO - src.trainer -   Batch 7,240  of  10,844.    Elapsed: 1:30:09.
+05/22/2020 23:55:10 - INFO - src.trainer -   Validation loss: 0.428639 AUC: 0.80665 accuracy: 0.809000.
+05/22/2020 23:55:14 - INFO - src.trainer -   Batch 7,280  of  10,844.    Elapsed: 1:30:39.
+05/22/2020 23:55:40 - INFO - src.trainer -   Validation loss: 0.404024 AUC: 0.80756 accuracy: 0.825750.
+05/22/2020 23:55:44 - INFO - src.trainer -   Batch 7,320  of  10,844.    Elapsed: 1:31:09.
+05/22/2020 23:56:10 - INFO - src.trainer -   Validation loss: 0.450336 AUC: 0.80906 accuracy: 0.795625.
+05/22/2020 23:56:14 - INFO - src.trainer -   Batch 7,360  of  10,844.    Elapsed: 1:31:39.
+05/22/2020 23:56:40 - INFO - src.trainer -   Validation loss: 0.394528 AUC: 0.80516 accuracy: 0.831250.
+05/22/2020 23:56:44 - INFO - src.trainer -   Batch 7,400  of  10,844.    Elapsed: 1:32:09.
+05/22/2020 23:57:10 - INFO - src.trainer -   Validation loss: 0.482871 AUC: 0.80630 accuracy: 0.774625.
+05/22/2020 23:57:14 - INFO - src.trainer -   Batch 7,440  of  10,844.    Elapsed: 1:32:39.
+05/22/2020 23:57:40 - INFO - src.trainer -   Validation loss: 0.402629 AUC: 0.80682 accuracy: 0.826750.
+05/22/2020 23:57:44 - INFO - src.trainer -   Batch 7,480  of  10,844.    Elapsed: 1:33:09.
+05/22/2020 23:58:10 - INFO - src.trainer -   Validation loss: 0.435559 AUC: 0.80783 accuracy: 0.805375.
+05/22/2020 23:58:14 - INFO - src.trainer -   Batch 7,520  of  10,844.    Elapsed: 1:33:38.
+05/22/2020 23:58:39 - INFO - src.trainer -   Validation loss: 0.416948 AUC: 0.80775 accuracy: 0.816500.
+05/22/2020 23:58:44 - INFO - src.trainer -   Batch 7,560  of  10,844.    Elapsed: 1:34:08.
+05/22/2020 23:59:09 - INFO - src.trainer -   Validation loss: 0.458315 AUC: 0.80832 accuracy: 0.789875.
+05/22/2020 23:59:13 - INFO - src.trainer -   Batch 7,600  of  10,844.    Elapsed: 1:34:38.
+05/22/2020 23:59:39 - INFO - src.trainer -   Validation loss: 0.418005 AUC: 0.80746 accuracy: 0.816000.
+05/22/2020 23:59:43 - INFO - src.trainer -   Batch 7,640  of  10,844.    Elapsed: 1:35:08.
+05/23/2020 00:00:09 - INFO - src.trainer -   Validation loss: 0.416610 AUC: 0.80742 accuracy: 0.816500.
+05/23/2020 00:00:13 - INFO - src.trainer -   Batch 7,680  of  10,844.    Elapsed: 1:35:38.
+05/23/2020 00:00:39 - INFO - src.trainer -   Validation loss: 0.494108 AUC: 0.80770 accuracy: 0.769125.
+05/23/2020 00:00:43 - INFO - src.trainer -   Batch 7,720  of  10,844.    Elapsed: 1:36:08.
+05/23/2020 00:01:09 - INFO - src.trainer -   Validation loss: 0.434413 AUC: 0.80890 accuracy: 0.806625.
+05/23/2020 00:01:13 - INFO - src.trainer -   Batch 7,760  of  10,844.    Elapsed: 1:36:38.
+05/23/2020 00:01:39 - INFO - src.trainer -   Validation loss: 0.433608 AUC: 0.80839 accuracy: 0.806875.
+05/23/2020 00:01:43 - INFO - src.trainer -   Batch 7,800  of  10,844.    Elapsed: 1:37:08.
+05/23/2020 00:02:09 - INFO - src.trainer -   Validation loss: 0.398777 AUC: 0.80830 accuracy: 0.830375.
+05/23/2020 00:02:13 - INFO - src.trainer -   Batch 7,840  of  10,844.    Elapsed: 1:37:38.
+05/23/2020 00:02:39 - INFO - src.trainer -   Validation loss: 0.415548 AUC: 0.80786 accuracy: 0.817250.
+05/23/2020 00:02:43 - INFO - src.trainer -   Batch 7,880  of  10,844.    Elapsed: 1:38:07.
+05/23/2020 00:03:08 - INFO - src.trainer -   Validation loss: 0.456482 AUC: 0.80958 accuracy: 0.792000.
+05/23/2020 00:03:13 - INFO - src.trainer -   Batch 7,920  of  10,844.    Elapsed: 1:38:37.
+05/23/2020 00:03:38 - INFO - src.trainer -   Validation loss: 0.443424 AUC: 0.80991 accuracy: 0.801000.
+05/23/2020 00:03:42 - INFO - src.trainer -   Batch 7,960  of  10,844.    Elapsed: 1:39:07.
+05/23/2020 00:04:08 - INFO - src.trainer -   Validation loss: 0.401700 AUC: 0.80797 accuracy: 0.827000.
+05/23/2020 00:04:12 - INFO - src.trainer -   Batch 8,000  of  10,844.    Elapsed: 1:39:37.
+05/23/2020 00:04:38 - INFO - src.trainer -   Validation loss: 0.435510 AUC: 0.80939 accuracy: 0.805750.
+05/23/2020 00:04:42 - INFO - src.trainer -   Batch 8,040  of  10,844.    Elapsed: 1:40:07.
+05/23/2020 00:05:08 - INFO - src.trainer -   Validation loss: 0.454753 AUC: 0.81020 accuracy: 0.793625.
+05/23/2020 00:05:12 - INFO - src.trainer -   Batch 8,080  of  10,844.    Elapsed: 1:40:37.
+05/23/2020 00:05:38 - INFO - src.trainer -   Validation loss: 0.373349 AUC: 0.79392 accuracy: 0.840375.
+05/23/2020 00:05:42 - INFO - src.trainer -   Batch 8,120  of  10,844.    Elapsed: 1:41:07.
+05/23/2020 00:06:08 - INFO - src.trainer -   Validation loss: 0.412212 AUC: 0.80779 accuracy: 0.820500.
+05/23/2020 00:06:12 - INFO - src.trainer -   Batch 8,160  of  10,844.    Elapsed: 1:41:37.
+05/23/2020 00:06:38 - INFO - src.trainer -   Validation loss: 0.428502 AUC: 0.80694 accuracy: 0.809500.
+05/23/2020 00:06:42 - INFO - src.trainer -   Batch 8,200  of  10,844.    Elapsed: 1:42:06.
+05/23/2020 00:07:07 - INFO - src.trainer -   Validation loss: 0.403615 AUC: 0.80926 accuracy: 0.827500.
+05/23/2020 00:07:12 - INFO - src.trainer -   Batch 8,240  of  10,844.    Elapsed: 1:42:36.
+05/23/2020 00:07:37 - INFO - src.trainer -   Validation loss: 0.422154 AUC: 0.80642 accuracy: 0.813125.
+05/23/2020 00:07:41 - INFO - src.trainer -   Batch 8,280  of  10,844.    Elapsed: 1:43:06.
+05/23/2020 00:08:07 - INFO - src.trainer -   Validation loss: 0.421363 AUC: 0.80702 accuracy: 0.814125.
+05/23/2020 00:08:11 - INFO - src.trainer -   Batch 8,320  of  10,844.    Elapsed: 1:43:36.
+05/23/2020 00:08:37 - INFO - src.trainer -   Validation loss: 0.438849 AUC: 0.81001 accuracy: 0.804000.
+05/23/2020 00:08:41 - INFO - src.trainer -   Batch 8,360  of  10,844.    Elapsed: 1:44:06.
+05/23/2020 00:09:07 - INFO - src.trainer -   Validation loss: 0.429283 AUC: 0.80776 accuracy: 0.809750.
+05/23/2020 00:09:11 - INFO - src.trainer -   Batch 8,400  of  10,844.    Elapsed: 1:44:36.
+05/23/2020 00:09:37 - INFO - src.trainer -   Validation loss: 0.457382 AUC: 0.80965 accuracy: 0.792125.
+05/23/2020 00:09:41 - INFO - src.trainer -   Batch 8,440  of  10,844.    Elapsed: 1:45:06.
+05/23/2020 00:10:07 - INFO - src.trainer -   Validation loss: 0.412942 AUC: 0.80794 accuracy: 0.820750.
+05/23/2020 00:10:11 - INFO - src.trainer -   Batch 8,480  of  10,844.    Elapsed: 1:45:36.
+05/23/2020 00:10:37 - INFO - src.trainer -   Validation loss: 0.405305 AUC: 0.80919 accuracy: 0.826250.
+05/23/2020 00:10:41 - INFO - src.trainer -   Batch 8,520  of  10,844.    Elapsed: 1:46:05.
+05/23/2020 00:11:06 - INFO - src.trainer -   Validation loss: 0.429628 AUC: 0.80746 accuracy: 0.809250.
+05/23/2020 00:11:11 - INFO - src.trainer -   Batch 8,560  of  10,844.    Elapsed: 1:46:35.
+05/23/2020 00:11:36 - INFO - src.trainer -   Validation loss: 0.398231 AUC: 0.80882 accuracy: 0.830125.
+05/23/2020 00:11:40 - INFO - src.trainer -   Batch 8,600  of  10,844.    Elapsed: 1:47:05.
+05/23/2020 00:12:06 - INFO - src.trainer -   Validation loss: 0.414624 AUC: 0.80668 accuracy: 0.818625.
+05/23/2020 00:12:10 - INFO - src.trainer -   Batch 8,640  of  10,844.    Elapsed: 1:47:35.
+05/23/2020 00:12:36 - INFO - src.trainer -   Validation loss: 0.430977 AUC: 0.80724 accuracy: 0.807750.
+05/23/2020 00:12:40 - INFO - src.trainer -   Batch 8,680  of  10,844.    Elapsed: 1:48:05.
+05/23/2020 00:13:06 - INFO - src.trainer -   Validation loss: 0.418942 AUC: 0.80583 accuracy: 0.815500.
+05/23/2020 00:13:10 - INFO - src.trainer -   Batch 8,720  of  10,844.    Elapsed: 1:48:35.
+05/23/2020 00:13:36 - INFO - src.trainer -   Validation loss: 0.404421 AUC: 0.80867 accuracy: 0.826500.
+05/23/2020 00:13:40 - INFO - src.trainer -   Batch 8,760  of  10,844.    Elapsed: 1:49:05.
+05/23/2020 00:14:06 - INFO - src.trainer -   Validation loss: 0.435031 AUC: 0.80865 accuracy: 0.805625.
+05/23/2020 00:14:10 - INFO - src.trainer -   Batch 8,800  of  10,844.    Elapsed: 1:49:35.
+05/23/2020 00:14:36 - INFO - src.trainer -   Validation loss: 0.437764 AUC: 0.80964 accuracy: 0.804500.
+05/23/2020 00:14:40 - INFO - src.trainer -   Batch 8,840  of  10,844.    Elapsed: 1:50:05.
+05/23/2020 00:15:06 - INFO - src.trainer -   Validation loss: 0.413925 AUC: 0.80742 accuracy: 0.819875.
+05/23/2020 00:15:10 - INFO - src.trainer -   Batch 8,880  of  10,844.    Elapsed: 1:50:34.
+05/23/2020 00:15:35 - INFO - src.trainer -   Validation loss: 0.416114 AUC: 0.80616 accuracy: 0.817750.
+05/23/2020 00:15:40 - INFO - src.trainer -   Batch 8,920  of  10,844.    Elapsed: 1:51:04.
+05/23/2020 00:16:05 - INFO - src.trainer -   Validation loss: 0.434931 AUC: 0.80920 accuracy: 0.806000.
+05/23/2020 00:16:09 - INFO - src.trainer -   Batch 8,960  of  10,844.    Elapsed: 1:51:34.
+05/23/2020 00:16:35 - INFO - src.trainer -   Validation loss: 0.420898 AUC: 0.80676 accuracy: 0.814250.
+05/23/2020 00:16:39 - INFO - src.trainer -   Batch 9,000  of  10,844.    Elapsed: 1:52:04.
+05/23/2020 00:17:05 - INFO - src.trainer -   Validation loss: 0.416073 AUC: 0.80587 accuracy: 0.817250.
+05/23/2020 00:17:09 - INFO - src.trainer -   Batch 9,040  of  10,844.    Elapsed: 1:52:34.
+05/23/2020 00:17:35 - INFO - src.trainer -   Validation loss: 0.407499 AUC: 0.80871 accuracy: 0.823750.
+05/23/2020 00:17:39 - INFO - src.trainer -   Batch 9,080  of  10,844.    Elapsed: 1:53:04.
+05/23/2020 00:18:05 - INFO - src.trainer -   Validation loss: 0.413403 AUC: 0.80705 accuracy: 0.819250.
+05/23/2020 00:18:09 - INFO - src.trainer -   Batch 9,120  of  10,844.    Elapsed: 1:53:34.
+05/23/2020 00:18:35 - INFO - src.trainer -   Validation loss: 0.434663 AUC: 0.80831 accuracy: 0.805625.
+05/23/2020 00:18:39 - INFO - src.trainer -   Batch 9,160  of  10,844.    Elapsed: 1:54:04.
+05/23/2020 00:19:05 - INFO - src.trainer -   Validation loss: 0.409751 AUC: 0.80812 accuracy: 0.821625.
+05/23/2020 00:19:09 - INFO - src.trainer -   Batch 9,200  of  10,844.    Elapsed: 1:54:33.
+05/23/2020 00:19:34 - INFO - src.trainer -   Validation loss: 0.420019 AUC: 0.80772 accuracy: 0.814750.
+05/23/2020 00:19:39 - INFO - src.trainer -   Batch 9,240  of  10,844.    Elapsed: 1:55:03.
+05/23/2020 00:20:04 - INFO - src.trainer -   Validation loss: 0.469742 AUC: 0.80906 accuracy: 0.784375.
+05/23/2020 00:20:08 - INFO - src.trainer -   Batch 9,280  of  10,844.    Elapsed: 1:55:33.
+05/23/2020 00:20:34 - INFO - src.trainer -   Validation loss: 0.433401 AUC: 0.80813 accuracy: 0.807000.
+05/23/2020 00:20:38 - INFO - src.trainer -   Batch 9,320  of  10,844.    Elapsed: 1:56:03.
+05/23/2020 00:21:04 - INFO - src.trainer -   Validation loss: 0.418356 AUC: 0.80635 accuracy: 0.815250.
+05/23/2020 00:21:08 - INFO - src.trainer -   Batch 9,360  of  10,844.    Elapsed: 1:56:33.
+05/23/2020 00:21:34 - INFO - src.trainer -   Validation loss: 0.396359 AUC: 0.80804 accuracy: 0.830500.
+05/23/2020 00:21:38 - INFO - src.trainer -   Batch 9,400  of  10,844.    Elapsed: 1:57:03.
+05/23/2020 00:22:04 - INFO - src.trainer -   Validation loss: 0.419020 AUC: 0.80646 accuracy: 0.814875.
+05/23/2020 00:22:08 - INFO - src.trainer -   Batch 9,440  of  10,844.    Elapsed: 1:57:33.
+05/23/2020 00:22:34 - INFO - src.trainer -   Validation loss: 0.418124 AUC: 0.80583 accuracy: 0.815500.
+05/23/2020 00:22:38 - INFO - src.trainer -   Batch 9,480  of  10,844.    Elapsed: 1:58:03.
+05/23/2020 00:23:04 - INFO - src.trainer -   Validation loss: 0.403067 AUC: 0.80904 accuracy: 0.827125.
+05/23/2020 00:23:08 - INFO - src.trainer -   Batch 9,520  of  10,844.    Elapsed: 1:58:33.
+05/23/2020 00:23:34 - INFO - src.trainer -   Validation loss: 0.390257 AUC: 0.80346 accuracy: 0.832875.
+05/23/2020 00:23:38 - INFO - src.trainer -   Batch 9,560  of  10,844.    Elapsed: 1:59:02.
+05/23/2020 00:24:03 - INFO - src.trainer -   Validation loss: 0.422648 AUC: 0.80768 accuracy: 0.813000.
+05/23/2020 00:24:08 - INFO - src.trainer -   Batch 9,600  of  10,844.    Elapsed: 1:59:32.
+05/23/2020 00:24:33 - INFO - src.trainer -   Validation loss: 0.410223 AUC: 0.80779 accuracy: 0.821625.
+05/23/2020 00:24:37 - INFO - src.trainer -   Batch 9,640  of  10,844.    Elapsed: 2:00:02.
+05/23/2020 00:25:03 - INFO - src.trainer -   Validation loss: 0.388372 AUC: 0.80257 accuracy: 0.833625.
+05/23/2020 00:25:07 - INFO - src.trainer -   Batch 9,680  of  10,844.    Elapsed: 2:00:32.
+05/23/2020 00:25:33 - INFO - src.trainer -   Validation loss: 0.416913 AUC: 0.80561 accuracy: 0.816250.
+05/23/2020 00:25:37 - INFO - src.trainer -   Batch 9,720  of  10,844.    Elapsed: 2:01:02.
+05/23/2020 00:26:03 - INFO - src.trainer -   Validation loss: 0.432080 AUC: 0.80931 accuracy: 0.807875.
+05/23/2020 00:26:07 - INFO - src.trainer -   Batch 9,760  of  10,844.    Elapsed: 2:01:32.
+05/23/2020 00:26:33 - INFO - src.trainer -   Validation loss: 0.415683 AUC: 0.80635 accuracy: 0.817500.
+05/23/2020 00:26:37 - INFO - src.trainer -   Batch 9,800  of  10,844.    Elapsed: 2:02:02.
+05/23/2020 00:27:03 - INFO - src.trainer -   Validation loss: 0.415714 AUC: 0.80627 accuracy: 0.817375.
+05/23/2020 00:27:07 - INFO - src.trainer -   Batch 9,840  of  10,844.    Elapsed: 2:02:32.
+05/23/2020 00:27:33 - INFO - src.trainer -   Validation loss: 0.436127 AUC: 0.81127 accuracy: 0.806125.
+05/23/2020 00:27:37 - INFO - src.trainer -   Batch 9,880  of  10,844.    Elapsed: 2:03:02.
+05/23/2020 00:28:03 - INFO - src.trainer -   Validation loss: 0.447657 AUC: 0.81102 accuracy: 0.798375.
+05/23/2020 00:28:07 - INFO - src.trainer -   Batch 9,920  of  10,844.    Elapsed: 2:03:31.
+05/23/2020 00:28:32 - INFO - src.trainer -   Validation loss: 0.421617 AUC: 0.80598 accuracy: 0.813500.
+05/23/2020 00:28:37 - INFO - src.trainer -   Batch 9,960  of  10,844.    Elapsed: 2:04:01.
+05/23/2020 00:29:02 - INFO - src.trainer -   Validation loss: 0.415266 AUC: 0.80672 accuracy: 0.818125.
+05/23/2020 00:29:06 - INFO - src.trainer -   Batch 10,000  of  10,844.    Elapsed: 2:04:31.
+05/23/2020 00:29:32 - INFO - src.trainer -   Validation loss: 0.393325 AUC: 0.80505 accuracy: 0.831625.
+05/23/2020 00:29:36 - INFO - src.trainer -   Batch 10,040  of  10,844.    Elapsed: 2:05:01.
+05/23/2020 00:30:02 - INFO - src.trainer -   Validation loss: 0.411165 AUC: 0.80782 accuracy: 0.821125.
+05/23/2020 00:30:06 - INFO - src.trainer -   Batch 10,080  of  10,844.    Elapsed: 2:05:31.
+05/23/2020 00:30:32 - INFO - src.trainer -   Validation loss: 0.429881 AUC: 0.80890 accuracy: 0.808875.
+05/23/2020 00:30:36 - INFO - src.trainer -   Batch 10,120  of  10,844.    Elapsed: 2:06:01.
+05/23/2020 00:31:02 - INFO - src.trainer -   Validation loss: 0.427339 AUC: 0.80801 accuracy: 0.810750.
+05/23/2020 00:31:06 - INFO - src.trainer -   Batch 10,160  of  10,844.    Elapsed: 2:06:31.
+05/23/2020 00:31:32 - INFO - src.trainer -   Validation loss: 0.424168 AUC: 0.80812 accuracy: 0.812625.
+05/23/2020 00:31:36 - INFO - src.trainer -   Batch 10,200  of  10,844.    Elapsed: 2:07:01.
+05/23/2020 00:32:02 - INFO - src.trainer -   Validation loss: 0.420896 AUC: 0.80602 accuracy: 0.814125.
+05/23/2020 00:32:06 - INFO - src.trainer -   Batch 10,240  of  10,844.    Elapsed: 2:07:30.
+05/23/2020 00:32:31 - INFO - src.trainer -   Validation loss: 0.419631 AUC: 0.80591 accuracy: 0.814500.
+05/23/2020 00:32:36 - INFO - src.trainer -   Batch 10,280  of  10,844.    Elapsed: 2:08:00.
+05/23/2020 00:33:01 - INFO - src.trainer -   Validation loss: 0.419621 AUC: 0.80583 accuracy: 0.814375.
+05/23/2020 00:33:05 - INFO - src.trainer -   Batch 10,320  of  10,844.    Elapsed: 2:08:30.
+05/23/2020 00:33:31 - INFO - src.trainer -   Validation loss: 0.419951 AUC: 0.80576 accuracy: 0.814250.
+05/23/2020 00:33:35 - INFO - src.trainer -   Batch 10,360  of  10,844.    Elapsed: 2:09:00.
+05/23/2020 00:34:01 - INFO - src.trainer -   Validation loss: 0.414374 AUC: 0.80679 accuracy: 0.818250.
+05/23/2020 00:34:05 - INFO - src.trainer -   Batch 10,400  of  10,844.    Elapsed: 2:09:30.
+05/23/2020 00:34:31 - INFO - src.trainer -   Validation loss: 0.412467 AUC: 0.80727 accuracy: 0.819625.
+05/23/2020 00:34:35 - INFO - src.trainer -   Batch 10,440  of  10,844.    Elapsed: 2:10:00.
+05/23/2020 00:35:01 - INFO - src.trainer -   Validation loss: 0.425234 AUC: 0.80768 accuracy: 0.811875.
+05/23/2020 00:35:05 - INFO - src.trainer -   Batch 10,480  of  10,844.    Elapsed: 2:10:30.
+05/23/2020 00:35:31 - INFO - src.trainer -   Validation loss: 0.434006 AUC: 0.80950 accuracy: 0.806500.
+05/23/2020 00:35:35 - INFO - src.trainer -   Batch 10,520  of  10,844.    Elapsed: 2:11:00.
+05/23/2020 00:36:01 - INFO - src.trainer -   Validation loss: 0.428353 AUC: 0.80802 accuracy: 0.809625.
+05/23/2020 00:36:05 - INFO - src.trainer -   Batch 10,560  of  10,844.    Elapsed: 2:11:29.
+05/23/2020 00:36:30 - INFO - src.trainer -   Validation loss: 0.411363 AUC: 0.80738 accuracy: 0.820375.
+05/23/2020 00:36:35 - INFO - src.trainer -   Batch 10,600  of  10,844.    Elapsed: 2:11:59.
+05/23/2020 00:37:00 - INFO - src.trainer -   Validation loss: 0.411447 AUC: 0.80731 accuracy: 0.820250.
+05/23/2020 00:37:04 - INFO - src.trainer -   Batch 10,640  of  10,844.    Elapsed: 2:12:29.
+05/23/2020 00:37:30 - INFO - src.trainer -   Validation loss: 0.415475 AUC: 0.80620 accuracy: 0.817250.
+05/23/2020 00:37:34 - INFO - src.trainer -   Batch 10,680  of  10,844.    Elapsed: 2:12:59.
+05/23/2020 00:38:00 - INFO - src.trainer -   Validation loss: 0.418152 AUC: 0.80642 accuracy: 0.815375.
+05/23/2020 00:38:04 - INFO - src.trainer -   Batch 10,720  of  10,844.    Elapsed: 2:13:29.
+05/23/2020 00:38:30 - INFO - src.trainer -   Validation loss: 0.418404 AUC: 0.80642 accuracy: 0.815375.
+05/23/2020 00:38:34 - INFO - src.trainer -   Batch 10,760  of  10,844.    Elapsed: 2:13:59.
+05/23/2020 00:39:00 - INFO - src.trainer -   Validation loss: 0.420265 AUC: 0.80568 accuracy: 0.814125.
+05/23/2020 00:39:04 - INFO - src.trainer -   Batch 10,800  of  10,844.    Elapsed: 2:14:29.
+05/23/2020 00:39:30 - INFO - src.trainer -   Validation loss: 0.421670 AUC: 0.80679 accuracy: 0.813750.
+05/23/2020 00:39:34 - INFO - src.trainer -   Batch 10,840  of  10,844.    Elapsed: 2:14:59.
+05/23/2020 00:40:00 - INFO - src.trainer -   Validation loss: 0.421778 AUC: 0.80672 accuracy: 0.813625.
+05/23/2020 00:40:26 - INFO - src.trainer -   [0/1] train_loss: 0.49042 valid loss: 0.42178 auc: 0.80672 accuracy: 0.81363
+05/23/2020 00:40:26 - INFO - src.trainer -   Validation loss decreased (inf --> 0.421777). Saving model ...
+05/23/2020 00:40:29 - INFO - transformers.configuration_utils -   Configuration saved in .model_checkpoint/config.json
+05/23/2020 00:40:32 - INFO - transformers.modeling_utils -   Model weights saved in .model_checkpoint/pytorch_model.bin
+05/23/2020 00:40:32 - INFO - src.trainer -   Saved finetuned model to .model_checkpoint
