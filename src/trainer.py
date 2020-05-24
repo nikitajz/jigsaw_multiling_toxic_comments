@@ -31,7 +31,7 @@ class EarlyStopping:
        Original: https://github.com/Bjarten/early-stopping-pytorch/blob/master/pytorchtools.py
     """
 
-    def __init__(self, patience=7, verbose=False, delta=0, path=None):
+    def __init__(self, patience=7, delta=0, path='.early_stopping'):
         """
         Args:
             patience (int): How long to wait after last time validation loss improved.
@@ -42,16 +42,13 @@ class EarlyStopping:
                             Default: 0
         """
         self.patience = patience
-        self.verbose = verbose
         self.counter = 0
         self.best_score = None
         self.early_stop = False
         self.val_loss_min = np.Inf
         self.delta = delta
-        if path is None:
-            path = Path('.checkpoints/early_stopping_checkpoint.pt')
-            path.mkdir(exist_ok=True)
-        self.path = path
+        self.path = Path(path)
+        self.path.mkdir(exist_ok=True)
 
     def __call__(self, val_loss, model):
 
@@ -73,9 +70,12 @@ class EarlyStopping:
     def save_checkpoint(self, val_loss, model):
         '''Saves model when validation loss decrease.'''
 
-        if self.verbose:
-            logger.info(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}). Saving model ...')
-        torch.save(model.state_dict(), self.path)
+        logger.info(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}). Saving model ...')
+        logger.info('Saved checkpoint')
+        if hasattr(model, "save_pretrained"):
+            model.save_pretrained(self.path)
+        else:
+            torch.save(model.state_dict(), self.path/"checkpoint.pt")
         self.val_loss_min = val_loss
 
 class Trainer:
@@ -128,7 +128,7 @@ class Trainer:
 
         early_stopping_enabled = self.args.patience is not None
         if early_stopping_enabled:
-            early_stopping = EarlyStopping(patience=self.args.patience, verbose=True, path=self.args.early_stopping_checkpoint_path)
+            early_stopping = EarlyStopping(patience=self.args.patience, path=self.args.early_stopping_checkpoint_path)
 
         for epoch in range(self.n_epochs):
             logger.debug(f'Epoch {epoch}')
@@ -162,7 +162,7 @@ class Trainer:
                     elapsed = format_time(time.time() - t0)
                     logger.info('Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(self.train_loader), elapsed))
                     self.tb_writer.add_scalar('Train/Loss', np.mean(train_losses_epoch[last_log_step:]), epoch * len(self.train_loader) + step)
-                    last_log_step = epoch * len(self.train_loader) + step
+                    last_log_step = step
                     if self.args.eval_on_log_step:
                         val_scores = evaluate_performance(self.model, self.valid_loader, self.device)
                         logger.info('Validation loss: {:.6f} AUC: {:.5f} accuracy: {:5f}.'.format(

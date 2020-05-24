@@ -9,7 +9,7 @@
     "resample": true,
     "max_len": 128,
     "device": "cuda:0",
-    "n_epochs": 1,
+    "n_epochs": 5,
     "batch_size": 32,
     "learning_rate": 5e-5,
     "tensorboard_enable": true,

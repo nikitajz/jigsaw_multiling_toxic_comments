@@ -6,6 +6,7 @@ import sys
 import dataclasses
 from dataclasses import dataclass, field
 from typing import Dict, Optional
+from pathlib import Path
 
 import numpy as np
 
@@ -23,6 +24,7 @@ from transformers import (XLMRobertaTokenizer,
 
 sys.path.append(os.getcwd())
 from src.config_base import ModelArgs, TrainingArgs
+from src.model import ToxicXLMRobertaModel
 from src.trainer import predict_toxic
 from src.utils import load_or_parse_args
 
@@ -42,12 +44,13 @@ if __name__ == "__main__":
 
     model_args, training_args = load_or_parse_args((ModelArgs, TrainingArgs), verbose=True)
 
-    model = XLMRobertaForSequenceClassification.from_pretrained(
-        model_args.model_checkpoint_path,
-        num_labels = 2,   
-        output_attentions = False,
-        output_hidden_states = False, 
-    )
+    model = ToxicXLMRobertaModel(
+        model_args.model_name,
+        num_labels = 2
+        )
+
+    model.load_state_dict(torch.load(Path(training_args.early_stopping_checkpoint_path)/"checkpoint.pt"))
+    model.eval()
 
     model.to(training_args.device)
 

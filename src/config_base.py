@@ -80,10 +80,10 @@ class TrainingArgs:
         default=None, metadata={"help": "Directory to save Tensorboard logs"}
     )
     early_stopping_checkpoint_path: str = field(
-        default="early_stopping_checkpoint.pt", metadata={"help": "Checkpoint path."}
+        default=".early_stopping", metadata={"help": "Checkpoint path."}
     )
     patience: int = field(
-        default=5, metadata={"help": "Early stopping patience"}
+        default=2, metadata={"help": "Early stopping patience"}
     )
 
     def __post_init__(self):

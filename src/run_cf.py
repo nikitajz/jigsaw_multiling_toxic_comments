@@ -26,6 +26,7 @@ from transformers import (XLMRobertaTokenizer,
 
 sys.path.append(os.getcwd())
 from src.config_base import ModelArgs, TrainingArgs
+from src.model import ToxicXLMRobertaModel
 from src.trainer import Trainer, evaluate_performance
 from src.utils import load_or_parse_args
 
@@ -53,12 +54,10 @@ if __name__ == '__main__':
         logger.info('Using pretrained HF model (without finetuning)')
         model_name_or_path = model_args.model_name
 
-    model = XLMRobertaForSequenceClassification.from_pretrained(
-        model_name_or_path, 
-        num_labels = 2,    
-        output_attentions = False, 
-        output_hidden_states = False, 
-    )
+    model = ToxicXLMRobertaModel(
+        model_name_or_path,
+        num_labels = 2
+        )
 
     if training_args.freeze_backbone:
         logger.warning("Freezing roberta model (only classifier going to be trained)")
@@ -187,10 +186,11 @@ if __name__ == '__main__':
     val_dataset = TensorDataset(input_ids, attention_masks, labels)
 
     val_dataloader = DataLoader(
-                val_dataset, 
-                sampler = SequentialSampler(val_dataset), 
-                batch_size = training_args.batch_size  
-            )
+                        val_dataset, 
+                        sampler = SequentialSampler(val_dataset), 
+                        batch_size = training_args.batch_size  
+                    )
+
     optimizer = AdamW(filter(lambda param: param.requires_grad, model.parameters()),
                     lr = training_args.learning_rate, 
                     eps = training_args.adam_epsilon
