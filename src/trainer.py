@@ -1,13 +1,9 @@
 import logging
 import time
 from pathlib import Path
-from typing import Optional
 
-import dill
 import numpy as np
-import pandas as pd
 import torch
-import torch.nn as nn  # "cuda" attribute appears only after importing torch.nn #283
 from sklearn.metrics import roc_auc_score
 
 from src.utils import format_time
@@ -37,10 +33,9 @@ class EarlyStopping:
         Args:
             patience (int): How long to wait after last time validation loss improved.
                             Default: 7
-            verbose (bool): If True, prints a message for each validation loss improvement. 
-                            Default: False
             delta (float): Minimum change in the monitored quantity to qualify as an improvement.
                             Default: 0
+            path (str):    Directory path to save temporary folder.
         """
         self.patience = patience
         self.counter = 0
@@ -69,7 +64,7 @@ class EarlyStopping:
             self.counter = 0
 
     def save_checkpoint(self, val_loss, model):
-        '''Saves model when validation loss decrease.'''
+        """Saves model when validation loss decrease."""
 
         logger.info(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}). Saving model ...')
         logger.info('Saved checkpoint')
@@ -81,7 +76,7 @@ class EarlyStopping:
 
 
 class Trainer:
-    def __init__(self, model, optimizer, scheduler, train_loader, valid_loader, n_epochs, args):
+    def __init__(self, model, optimizer, scheduler, train_loader, valid_loader, args):
         """Training loop (with optional EarlyStopping criterion).
         Arguments:
             model {nn.Module} -- PyTorch model
@@ -125,8 +120,8 @@ class Trainer:
 
     def train_model(self, model_path):
 
-        epoch_train_loss = []  # the average training loss per epoch
-        epoch_valid_loss = []  # the average validation loss per epoch
+        train_losses_epoch = []
+        valid_losses_epoch = []
 
         early_stopping_enabled = self.args.patience is not None
         if early_stopping_enabled:
@@ -134,10 +129,10 @@ class Trainer:
 
         for epoch in range(self.n_epochs):
             logger.debug(f'Epoch {epoch}')
-            train_losses_epoch = []
-            valid_losses_epoch = []
+            epoch_train_loss = []  # the average training loss per epoch
+            epoch_valid_loss = []  # the average validation loss per epoch
+
             last_log_step = 0
-            val_acc = 0
             t0 = time.time()
 
             self.model.train()
@@ -158,17 +153,18 @@ class Trainer:
                 self.optimizer.step()
                 self.scheduler.step()
 
-                train_losses_epoch.append(loss.cpu().detach().item())
+                epoch_train_loss.append(loss.cpu().detach().item())
 
                 if self.args.log_step is not None and step % self.args.log_step == 0:
                     elapsed = format_time(time.time() - t0)
                     logger.info(
                         'Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(self.train_loader), elapsed))
-                    self.tb_writer.add_scalar('Train/Loss', np.mean(train_losses_epoch[last_log_step:]),
+                    self.tb_writer.add_scalar('Train/Loss', np.mean(epoch_train_loss[last_log_step:]),
                                               epoch * len(self.train_loader) + step)
                     last_log_step = step
                     if self.args.eval_on_log_step:
                         val_scores = evaluate_performance(self.model, self.valid_loader, self.device)
+                        epoch_valid_loss.append(val_scores['loss'])
                         logger.info('Validation loss: {:.6f} AUC: {:.5f} accuracy: {:5f}.'.format(
                             val_scores['loss'], val_scores['auc'], val_scores['accuracy']))
                         self.tb_writer.add_scalar('Validation/Loss', val_scores['loss'],
@@ -176,7 +172,7 @@ class Trainer:
                         self.tb_writer.add_scalar('Validation/AUC', val_scores['auc'],
                                                   epoch * len(self.train_loader) + step)
 
-            train_loss_epoch_avg = np.mean(train_losses_epoch)
+            train_loss_epoch_avg = np.mean(epoch_train_loss)
 
             valid_epoch_scores = evaluate_performance(self.model, self.valid_loader, self.device)
             valid_loss_epoch_avg = valid_epoch_scores['loss']
@@ -190,8 +186,8 @@ class Trainer:
                         f'accuracy: {valid_epoch_scores["accuracy"]:.5f}'
                         )
 
-            epoch_train_loss.append(train_loss_epoch_avg)
-            epoch_valid_loss.append(valid_loss_epoch_avg)
+            train_losses_epoch.append(train_loss_epoch_avg)
+            valid_losses_epoch.append(valid_loss_epoch_avg)
 
             if early_stopping_enabled:
                 early_stopping(valid_loss_epoch_avg, self.model)
@@ -215,7 +211,6 @@ def evaluate_performance(model, dataloader, device, print_metrics=False):
     """
 
     test_loss_l = []
-    test_size = len(dataloader.dataset)
     y_true_l = []
     y_pred_l = []
     model.eval()
@@ -238,10 +233,9 @@ def evaluate_performance(model, dataloader, device, print_metrics=False):
         y_true = torch.cat(y_true_l, 0).cpu().detach().numpy()
         y_pred = torch.cat(y_pred_l, 0).cpu().detach().numpy()
 
-    scores = {}
-    scores['loss'] = np.mean(test_loss_l)
-    scores['auc'] = roc_auc_score(y_true, y_pred)
-    scores['accuracy'] = np.mean(y_true == y_pred)
+    scores = {'loss': np.mean(test_loss_l),
+              'auc': roc_auc_score(y_true, y_pred),
+              'accuracy': np.mean(y_true == y_pred)}
 
     if print_metrics:
         for k, v in scores.items():

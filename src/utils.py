@@ -1,8 +1,7 @@
-import time
 import datetime
+import logging
 import os
 import sys
-import logging
 from pprint import pformat
 
 from transformers import HfArgumentParser
@@ -13,7 +12,7 @@ def format_time(elapsed):
     Takes a time in seconds and returns a string hh:mm:ss
     """
     # Round to the nearest second.
-    elapsed_rounded = int(round((elapsed)))
+    elapsed_rounded = int(round(elapsed))
 
     # Format as hh:mm:ss
     return str(datetime.timedelta(seconds=elapsed_rounded))

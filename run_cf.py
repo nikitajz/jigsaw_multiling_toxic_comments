@@ -1,33 +1,20 @@
 """ Finetuning the XLM-RoBERTa model for sequence classification."""
 
 import logging
-import os
-import sys
-import dataclasses
-from dataclasses import dataclass, field
-from typing import Dict, Optional
 from pathlib import Path
 
 import pandas as pd
-import numpy as np
-from pprint import pformat
-
 import torch
-from torch.utils.data import TensorDataset, random_split
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
-
+from torch.utils.data import TensorDataset
 from transformers import (XLMRobertaTokenizer,
                           XLMRobertaForSequenceClassification,
-                          XLMRobertaConfig,
-                          XLMRobertaModel,
                           AdamW,
                           set_seed,
                           get_linear_schedule_with_warmup)
 
-sys.path.append(os.getcwd())
 from src.config_base import ModelArgs, TrainingArgs
-from src.model import ToxicXLMRobertaModel
-from src.trainer import Trainer, evaluate_performance
+from src.trainer import Trainer
 from src.utils import load_or_parse_args
 
 if __name__ == '__main__':
@@ -53,9 +40,11 @@ if __name__ == '__main__':
         logger.info('Using pretrained HF model (without finetuning)')
         model_name_or_path = model_args.model_name
 
-    model = ToxicXLMRobertaModel(
+    model = XLMRobertaForSequenceClassification.from_pretrained(
         model_name_or_path,
-        num_labels=2
+        num_labels=2,
+        output_attentions=False,
+        output_hidden_states=False,
     )
 
     if training_args.freeze_backbone:
@@ -201,7 +190,6 @@ if __name__ == '__main__':
                                                 num_warmup_steps=0,
                                                 num_training_steps=total_steps)
 
-    trainer = Trainer(model, optimizer, scheduler, train_dataloader, val_dataloader, n_epochs=training_args.n_epochs,
-                      args=training_args)
+    trainer = Trainer(model, optimizer, scheduler, train_dataloader, val_dataloader, args=training_args)
 
     trainer.train_model(model_args.model_checkpoint_path)

@@ -1,31 +1,16 @@
 """ Finetuning the XLM-RoBERTa model for sequence classification."""
 
 import logging
-import os
-import sys
-import dataclasses
-from dataclasses import dataclass, field
-from typing import Dict, Optional
-from pathlib import Path
-
-import numpy as np
 
 import torch
-from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
-from torch.utils.data import TensorDataset, random_split
-
+from torch.utils.data import DataLoader, SequentialSampler
+from torch.utils.data import TensorDataset
 from transformers import (XLMRobertaTokenizer,
                           XLMRobertaForSequenceClassification,
-                          XLMRobertaConfig,
-                          XLMRobertaModel,
-                          AdamW,
-                          HfArgumentParser,
                           set_seed)
 
-sys.path.append(os.getcwd())
 from src.config_base import ModelArgs, TrainingArgs
-from src.model import ToxicXLMRobertaModel
-from src.trainer import predict_toxic
+from src.trainer import evaluate_performance
 from src.utils import load_or_parse_args
 
 logger = logging.getLogger(__name__)
@@ -43,20 +28,19 @@ if __name__ == "__main__":
 
     model_args, training_args = load_or_parse_args((ModelArgs, TrainingArgs), verbose=True)
 
-    model = ToxicXLMRobertaModel(
-        model_args.model_name,
-        num_labels=2
+    model = XLMRobertaForSequenceClassification.from_pretrained(
+        model_args.model_checkpoint_path,
+        num_labels=2,
+        output_attentions=False,
+        output_hidden_states=False,
     )
-
-    model.load_state_dict(torch.load(Path(training_args.early_stopping_checkpoint_path) / "checkpoint.pt"))
-    model.eval()
 
     model.to(training_args.device)
 
     tokenizer = XLMRobertaTokenizer.from_pretrained(model_args.tokenizer_name)
 
     sample_input_pt = tokenizer.encode_plus(
-        'This is a sample input to demonstrate performance of distiled models especially inference time',
+        'This is a sample input to demonstrate performance of distilled models especially inference time',
         return_tensors="pt"
     )
 
@@ -69,10 +53,11 @@ if __name__ == "__main__":
     logger.info('Loading datasets')
     import pandas as pd
 
-    cols_to_use = ['id', 'content']
-    test_df = pd.read_csv('data/test.csv', usecols=cols_to_use)
+    cols_to_use = ['comment_text', 'toxic']
+    val_df = pd.read_csv('data/validation.csv', usecols=cols_to_use)
 
-    sentences = test_df['content'].values
+    sentences = val_df['comment_text'].values
+    labels = val_df['toxic'].values
 
     logger.info('Applying tokenizer to train dataset')
     # Tokenize all of the sentences and map the tokens to thier word IDs.
@@ -99,19 +84,19 @@ if __name__ == "__main__":
     # Convert the lists into tensors.
     input_ids = torch.cat(input_ids, dim=0)
     attention_masks = torch.cat(attention_masks, dim=0)
+    labels = torch.tensor(labels)
 
-    test_dataset = TensorDataset(input_ids, attention_masks)
+    # Print sentence 0, now as a list of IDs.
+    print('Original: ', sentences[0])
+    print('Token IDs:', input_ids[0])
 
-    test_dataloader = DataLoader(
-        test_dataset,
-        sampler=SequentialSampler(test_dataset),
+    # Combine the training inputs into a TensorDataset.
+    val_dataset = TensorDataset(input_ids, attention_masks, labels)
+
+    val_dataloader = DataLoader(
+        val_dataset,
+        sampler=SequentialSampler(val_dataset),
         batch_size=training_args.batch_size
     )
 
-    logger.info('Predicting test set')
-    preds = predict_toxic(model, test_dataloader, training_args.device)
-
-    submit = pd.read_csv('data/sample_submission.csv')
-    submit['toxic'] = preds
-    logger.info(f"There are {(preds == 1).sum()}/{preds.shape[0]} positive samples")
-    submit.to_csv('data/submit.csv', index=False)
+    evaluate_performance(model, val_dataloader, training_args.device, print_metrics=True)
