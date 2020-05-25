@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from transformers import XLMRobertaModel
 
+#TODO: inherit from BertPreTrainedModel to use save_pretrained natively 
 class ToxicXLMRobertaModel(nn.Module):
 
     def __init__(self, backbone_path, num_labels=2, dropout_rate=0.3):
