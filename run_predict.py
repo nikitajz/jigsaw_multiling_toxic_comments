@@ -1,16 +1,14 @@
 """ Finetuning the XLM-RoBERTa model for sequence classification."""
 
 import logging
-from pathlib import Path
 
+import pandas as pd
 import torch
 from torch.utils.data import DataLoader, SequentialSampler
 from torch.utils.data import TensorDataset
-from transformers import (XLMRobertaTokenizer,
-                          set_seed)
+from transformers import XLMRobertaTokenizer, XLMRobertaForSequenceClassification, set_seed
 
 from src.config_base import ModelArgs, TrainingArgs
-from src.model import ToxicXLMRobertaModel
 from src.trainer import predict_toxic
 from src.utils import load_or_parse_args
 
@@ -29,13 +27,12 @@ if __name__ == "__main__":
 
     model_args, training_args = load_or_parse_args((ModelArgs, TrainingArgs), verbose=True)
 
-    model = ToxicXLMRobertaModel(
-        model_args.model_name,
-        num_labels=2
+    model = XLMRobertaForSequenceClassification.from_pretrained(
+        model_args.model_checkpoint_path,
+        num_labels=2,
+        output_attentions=False,
+        output_hidden_states=False,
     )
-
-    model.load_state_dict(torch.load(Path(training_args.early_stopping_checkpoint_path) / "checkpoint.pt"))
-    model.eval()
 
     model.to(training_args.device)
 
@@ -53,7 +50,6 @@ if __name__ == "__main__":
     logger.debug(f"Attention mask: {sample_input_pt['attention_mask'].tolist()[0]}")
 
     logger.info('Loading datasets')
-    import pandas as pd
 
     cols_to_use = ['id', 'content']
     test_df = pd.read_csv('data/test.csv', usecols=cols_to_use)
@@ -61,7 +57,7 @@ if __name__ == "__main__":
     sentences = test_df['content'].values
 
     logger.info('Applying tokenizer to train dataset')
-    # Tokenize all of the sentences and map the tokens to thier word IDs.
+    # Tokenize all of the sentences and map the tokens to their word IDs.
     input_ids = []
     attention_masks = []
 
