@@ -2,7 +2,8 @@ from dataclasses import dataclass, field
 from typing import Dict, Optional
 
 import torch
-import torch.nn as nn # for cuda attribute
+import torch.nn as nn  # for cuda attribute
+
 
 @dataclass
 class ModelArgs:
@@ -29,10 +30,12 @@ class ModelArgs:
         default=False, metadata={"help": "Whether to load pretrained model from last checkpoint"}
     )
 
+
 @dataclass
-class TrainingArgs:  
+class TrainingArgs:
     dataset: str = field(
-        default='en', metadata={"help": "Which dataset to use for training. Possible options are: `en`, `google-translated`, `wiki`, `cc`"}
+        default='en', metadata={
+            "help": "Which dataset to use for training. Possible options are: `en`, `google-translated`, `wiki`, `cc`"}
     )
     resample: bool = field(
         default=False, metadata={"help": "Resample to have equal samples per class"}
@@ -45,10 +48,10 @@ class TrainingArgs:
     )
     freeze_backbone: bool = field(
         default=False, metadata={"help": "Freeze Roberta model and train only classifier"}
-    )    
+    )
     n_epochs: int = field(
         default=2, metadata={"help": "Number of epochs to train"}
-    )    
+    )
     batch_size: int = field(
         default=16, metadata={"help": "Batch size"}
     )
@@ -72,7 +75,7 @@ class TrainingArgs:
     )
     eval_on_log_step: bool = field(
         default=False, metadata={"help": "Evaluate on validation dataset on each log step"}
-    )    
+    )
     tensorboard_enable: bool = field(
         default=False, metadata={"help": "Whether to use tensorboard"}
     )

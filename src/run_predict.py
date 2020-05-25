@@ -14,9 +14,9 @@ import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data import TensorDataset, random_split
 
-from transformers import (XLMRobertaTokenizer, 
-                          XLMRobertaForSequenceClassification, 
-                          XLMRobertaConfig, 
+from transformers import (XLMRobertaTokenizer,
+                          XLMRobertaForSequenceClassification,
+                          XLMRobertaConfig,
                           XLMRobertaModel,
                           AdamW,
                           HfArgumentParser,
@@ -30,14 +30,13 @@ from src.utils import load_or_parse_args
 
 logger = logging.getLogger(__name__)
 
-
 if __name__ == "__main__":
 
     logging.basicConfig(
-            format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
-            datefmt="%m/%d/%Y %H:%M:%S",
-            level=logging.DEBUG
-        )
+        format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
+        datefmt="%m/%d/%Y %H:%M:%S",
+        level=logging.DEBUG
+    )
 
     logger.info('Fixed the seed')
     set_seed(42)
@@ -46,10 +45,10 @@ if __name__ == "__main__":
 
     model = ToxicXLMRobertaModel(
         model_args.model_name,
-        num_labels = 2
-        )
+        num_labels=2
+    )
 
-    model.load_state_dict(torch.load(Path(training_args.early_stopping_checkpoint_path)/"checkpoint.pt"))
+    model.load_state_dict(torch.load(Path(training_args.early_stopping_checkpoint_path) / "checkpoint.pt"))
     model.eval()
 
     model.to(training_args.device)
@@ -57,7 +56,7 @@ if __name__ == "__main__":
     tokenizer = XLMRobertaTokenizer.from_pretrained(model_args.tokenizer_name)
 
     sample_input_pt = tokenizer.encode_plus(
-        'This is a sample input to demonstrate performance of distiled models especially inference time', 
+        'This is a sample input to demonstrate performance of distiled models especially inference time',
         return_tensors="pt"
     )
 
@@ -69,9 +68,9 @@ if __name__ == "__main__":
 
     logger.info('Loading datasets')
     import pandas as pd
+
     cols_to_use = ['id', 'content']
     test_df = pd.read_csv('data/test.csv', usecols=cols_to_use)
-
 
     sentences = test_df['content'].values
 
@@ -83,17 +82,17 @@ if __name__ == "__main__":
     # For every sentence...
     for sent in sentences:
         encoded_dict = tokenizer.encode_plus(
-                            sent,                      # Sentence to encode.
-                            add_special_tokens = True, # Add '[CLS]' and '[SEP]'
-                            max_length = model_args.max_len,           # Pad & truncate all sentences.
-                            pad_to_max_length = True,
-                            return_attention_mask = True,   # Construct attn. masks.
-                            return_tensors = 'pt',     # Return pytorch tensors.
-                    )
-        
+            sent,  # Sentence to encode.
+            add_special_tokens=True,  # Add '[CLS]' and '[SEP]'
+            max_length=model_args.max_len,  # Pad & truncate all sentences.
+            pad_to_max_length=True,
+            return_attention_mask=True,  # Construct attn. masks.
+            return_tensors='pt',  # Return pytorch tensors.
+        )
+
         # Add the encoded sentence to the list.    
         input_ids.append(encoded_dict['input_ids'])
-        
+
         # And its attention mask (simply differentiates padding from non-padding).
         attention_masks.append(encoded_dict['attention_mask'])
 
@@ -104,10 +103,10 @@ if __name__ == "__main__":
     test_dataset = TensorDataset(input_ids, attention_masks)
 
     test_dataloader = DataLoader(
-                test_dataset, 
-                sampler = SequentialSampler(test_dataset), 
-                batch_size = training_args.batch_size  
-            )
+        test_dataset,
+        sampler=SequentialSampler(test_dataset),
+        batch_size=training_args.batch_size
+    )
 
     logger.info('Predicting test set')
     preds = predict_toxic(model, test_dataloader, training_args.device)

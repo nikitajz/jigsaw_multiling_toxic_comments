@@ -13,9 +13,9 @@ import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data import TensorDataset, random_split
 
-from transformers import (XLMRobertaTokenizer, 
-                          XLMRobertaForSequenceClassification, 
-                          XLMRobertaConfig, 
+from transformers import (XLMRobertaTokenizer,
+                          XLMRobertaForSequenceClassification,
+                          XLMRobertaConfig,
                           XLMRobertaModel,
                           AdamW,
                           HfArgumentParser,
@@ -28,14 +28,13 @@ from src.utils import load_or_parse_args
 
 logger = logging.getLogger(__name__)
 
-
 if __name__ == "__main__":
 
     logging.basicConfig(
-            format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
-            datefmt="%m/%d/%Y %H:%M:%S",
-            level=logging.DEBUG
-        )
+        format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
+        datefmt="%m/%d/%Y %H:%M:%S",
+        level=logging.DEBUG
+    )
 
     logger.info('Fixed the seed')
     set_seed(42)
@@ -44,9 +43,9 @@ if __name__ == "__main__":
 
     model = XLMRobertaForSequenceClassification.from_pretrained(
         model_args.model_checkpoint_path,
-        num_labels = 2,   
-        output_attentions = False,
-        output_hidden_states = False, 
+        num_labels=2,
+        output_attentions=False,
+        output_hidden_states=False,
     )
 
     model.to(training_args.device)
@@ -54,7 +53,7 @@ if __name__ == "__main__":
     tokenizer = XLMRobertaTokenizer.from_pretrained(model_args.tokenizer_name)
 
     sample_input_pt = tokenizer.encode_plus(
-        'This is a sample input to demonstrate performance of distiled models especially inference time', 
+        'This is a sample input to demonstrate performance of distiled models especially inference time',
         return_tensors="pt"
     )
 
@@ -66,6 +65,7 @@ if __name__ == "__main__":
 
     logger.info('Loading datasets')
     import pandas as pd
+
     cols_to_use = ['comment_text', 'toxic']
     val_df = pd.read_csv('data/validation.csv', usecols=cols_to_use)
 
@@ -80,17 +80,17 @@ if __name__ == "__main__":
     # For every sentence...
     for sent in sentences:
         encoded_dict = tokenizer.encode_plus(
-                            sent,                      # Sentence to encode.
-                            add_special_tokens = True, # Add '[CLS]' and '[SEP]'
-                            max_length = model_args.max_len,           # Pad & truncate all sentences.
-                            pad_to_max_length = True,
-                            return_attention_mask = True,   # Construct attn. masks.
-                            return_tensors = 'pt',     # Return pytorch tensors.
-                    )
-        
+            sent,  # Sentence to encode.
+            add_special_tokens=True,  # Add '[CLS]' and '[SEP]'
+            max_length=model_args.max_len,  # Pad & truncate all sentences.
+            pad_to_max_length=True,
+            return_attention_mask=True,  # Construct attn. masks.
+            return_tensors='pt',  # Return pytorch tensors.
+        )
+
         # Add the encoded sentence to the list.    
         input_ids.append(encoded_dict['input_ids'])
-        
+
         # And its attention mask (simply differentiates padding from non-padding).
         attention_masks.append(encoded_dict['attention_mask'])
 
@@ -107,9 +107,9 @@ if __name__ == "__main__":
     val_dataset = TensorDataset(input_ids, attention_masks, labels)
 
     val_dataloader = DataLoader(
-                val_dataset, 
-                sampler = SequentialSampler(val_dataset), 
-                batch_size = training_args.batch_size  
-            )
+        val_dataset,
+        sampler=SequentialSampler(val_dataset),
+        batch_size=training_args.batch_size
+    )
 
     evaluate_performance(model, val_dataloader, training_args.device, print_metrics=True)

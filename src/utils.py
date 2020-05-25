@@ -9,14 +9,15 @@ from transformers import HfArgumentParser
 
 
 def format_time(elapsed):
-    '''
+    """
     Takes a time in seconds and returns a string hh:mm:ss
-    '''
+    """
     # Round to the nearest second.
     elapsed_rounded = int(round((elapsed)))
-    
+
     # Format as hh:mm:ss
     return str(datetime.timedelta(seconds=elapsed_rounded))
+
 
 def load_or_parse_args(ArgsSeq, verbose=False):
     """Load arguments from json if only one parameter with .json extension is provided. 
@@ -44,7 +45,7 @@ def load_or_parse_args(ArgsSeq, verbose=False):
         seq_args = parser.parse_args_into_dataclasses()
 
     if verbose:
-        logger=logging.getLogger(__name__)
+        logger = logging.getLogger(__name__)
         for arg_pack in seq_args:
             logger.info(f'{arg_pack.__class__.__name__}:\n{pformat(arg_pack.__dict__)}\n')
 

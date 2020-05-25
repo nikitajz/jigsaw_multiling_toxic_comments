@@ -23,6 +23,7 @@ except ImportError:
 def is_tensorboard_available():
     return _has_tensorboard
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -75,8 +76,9 @@ class EarlyStopping:
         if hasattr(model, "save_pretrained"):
             model.save_pretrained(self.path)
         else:
-            torch.save(model.state_dict(), self.path/"checkpoint.pt")
+            torch.save(model.state_dict(), self.path / "checkpoint.pt")
         self.val_loss_min = val_loss
+
 
 class Trainer:
     def __init__(self, model, optimizer, scheduler, train_loader, valid_loader, n_epochs, args):
@@ -109,20 +111,20 @@ class Trainer:
         logger.info(f"**** Running model training for {self.n_epochs} epochs")
 
     def _setup_tensorboard(self, tensorboard_enable, tb_log_dir):
-            if is_tensorboard_available() and tensorboard_enable:
-                if tb_log_dir is not None:
-                    tb_log_dir = Path(tb_log_dir)
-                    tb_log_dir.mkdir(exist_ok=True)
-                    self.tb_writer = SummaryWriter(log_dir=tb_log_dir)
-                else:
-                    self.tb_writer = SummaryWriter()
-            elif not is_tensorboard_available():
-                    logger.warning(
-                        "You are instantiating a Trainer but Tensorboard is not installed. You should consider installing it."
-                    )
+        if is_tensorboard_available() and tensorboard_enable:
+            if tb_log_dir is not None:
+                tb_log_dir = Path(tb_log_dir)
+                tb_log_dir.mkdir(exist_ok=True)
+                self.tb_writer = SummaryWriter(log_dir=tb_log_dir)
+            else:
+                self.tb_writer = SummaryWriter()
+        elif not is_tensorboard_available():
+            logger.warning(
+                "You are instantiating a Trainer but Tensorboard is not installed. You should consider installing it."
+            )
 
     def train_model(self, model_path):
-        
+
         epoch_train_loss = []  # the average training loss per epoch
         epoch_valid_loss = []  # the average validation loss per epoch
 
@@ -145,9 +147,9 @@ class Trainer:
                 b_labels = batch[2].to(self.device)
 
                 self.optimizer.zero_grad()
-                loss, logits = self.model(b_input_ids, 
-                                          token_type_ids=None, 
-                                          attention_mask=b_input_mask, 
+                loss, logits = self.model(b_input_ids,
+                                          token_type_ids=None,
+                                          attention_mask=b_input_mask,
                                           labels=b_labels)
                 loss.backward()
 
@@ -160,16 +162,19 @@ class Trainer:
 
                 if self.args.log_step is not None and step % self.args.log_step == 0:
                     elapsed = format_time(time.time() - t0)
-                    logger.info('Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(self.train_loader), elapsed))
-                    self.tb_writer.add_scalar('Train/Loss', np.mean(train_losses_epoch[last_log_step:]), epoch * len(self.train_loader) + step)
+                    logger.info(
+                        'Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(self.train_loader), elapsed))
+                    self.tb_writer.add_scalar('Train/Loss', np.mean(train_losses_epoch[last_log_step:]),
+                                              epoch * len(self.train_loader) + step)
                     last_log_step = step
                     if self.args.eval_on_log_step:
                         val_scores = evaluate_performance(self.model, self.valid_loader, self.device)
                         logger.info('Validation loss: {:.6f} AUC: {:.5f} accuracy: {:5f}.'.format(
-                                     val_scores['loss'], val_scores['auc'], val_scores['accuracy']))
-                        self.tb_writer.add_scalar('Validation/Loss', val_scores['loss'], epoch * len(self.train_loader) + step)
-                        self.tb_writer.add_scalar('Validation/AUC', val_scores['auc'], epoch * len(self.train_loader) + step)
-
+                            val_scores['loss'], val_scores['auc'], val_scores['accuracy']))
+                        self.tb_writer.add_scalar('Validation/Loss', val_scores['loss'],
+                                                  epoch * len(self.train_loader) + step)
+                        self.tb_writer.add_scalar('Validation/AUC', val_scores['auc'],
+                                                  epoch * len(self.train_loader) + step)
 
             train_loss_epoch_avg = np.mean(train_losses_epoch)
 
@@ -220,9 +225,9 @@ def evaluate_performance(model, dataloader, device, print_metrics=False):
             b_input_mask = batch[1].to(device)
             b_labels = batch[2].to(device)
 
-            loss, logits = model(b_input_ids, 
-                                 token_type_ids=None, 
-                                 attention_mask=b_input_mask, 
+            loss, logits = model(b_input_ids,
+                                 token_type_ids=None,
+                                 attention_mask=b_input_mask,
                                  labels=b_labels)
 
             test_loss_l.append(loss.cpu().detach().item())
@@ -254,10 +259,10 @@ def predict_toxic(model, test_loader, device):
             b_input_ids = batch[0].to(device)
             b_input_mask = batch[1].to(device)
 
-            logits = model(b_input_ids, 
-                           token_type_ids=None, 
+            logits = model(b_input_ids,
+                           token_type_ids=None,
                            attention_mask=b_input_mask)
             y_pred_l.append(logits[0])
-            
+
         y_pred = torch.cat(y_pred_l, 0).argmax(dim=1).cpu().detach().numpy()
     return y_pred

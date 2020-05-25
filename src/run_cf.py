@@ -16,10 +16,10 @@ import torch
 from torch.utils.data import TensorDataset, random_split
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 
-from transformers import (XLMRobertaTokenizer, 
-                          XLMRobertaForSequenceClassification, 
-                          XLMRobertaConfig, 
-                          XLMRobertaModel, 
+from transformers import (XLMRobertaTokenizer,
+                          XLMRobertaForSequenceClassification,
+                          XLMRobertaConfig,
+                          XLMRobertaModel,
                           AdamW,
                           set_seed,
                           get_linear_schedule_with_warmup)
@@ -30,15 +30,14 @@ from src.model import ToxicXLMRobertaModel
 from src.trainer import Trainer, evaluate_performance
 from src.utils import load_or_parse_args
 
-
 if __name__ == '__main__':
 
     logger = logging.getLogger(__name__)
     logging.basicConfig(
-            format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
-            datefmt="%m/%d/%Y %H:%M:%S",
-            level=logging.DEBUG
-        )
+        format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
+        datefmt="%m/%d/%Y %H:%M:%S",
+        level=logging.DEBUG
+    )
 
     model_args, training_args = load_or_parse_args((ModelArgs, TrainingArgs), verbose=True)
 
@@ -48,7 +47,7 @@ if __name__ == '__main__':
     logger.info('Creating model and tokenizer')
 
     if model_args.load_checkpoint:
-        model_name_or_path = model_args.model_checkpoint_path 
+        model_name_or_path = model_args.model_checkpoint_path
         logger.info('Loading fune-tuned model from checkpoint')
     else:
         logger.info('Using pretrained HF model (without finetuning)')
@@ -56,13 +55,13 @@ if __name__ == '__main__':
 
     model = ToxicXLMRobertaModel(
         model_name_or_path,
-        num_labels = 2
-        )
+        num_labels=2
+    )
 
     if training_args.freeze_backbone:
         logger.warning("Freezing roberta model (only classifier going to be trained)")
         for name, param in model.named_parameters():
-            if 'classifier' not in name: # classifier layer
+            if 'classifier' not in name:  # classifier layer
                 param.requires_grad = False
 
     model.to(training_args.device)
@@ -93,7 +92,7 @@ if __name__ == '__main__':
         data_path = Path("data/translated/google-api/cleaned/")
         filename = "jigsaw-toxic-comment-train-google-{}-cleaned.csv.zip"
         train = pd.concat(
-            [pd.read_csv(data_path/filename.format(lang), usecols=cols_to_use) for lang in langs]
+            [pd.read_csv(data_path / filename.format(lang), usecols=cols_to_use) for lang in langs]
         )
         logger.debug(f'Training dataset shape: {train.shape}')
 
@@ -119,16 +118,16 @@ if __name__ == '__main__':
     # For every sentence...
     for sent in sentences:
         encoded_dict = tokenizer.encode_plus(
-                            sent,                    
-                            add_special_tokens = True,
-                            max_length = model_args.max_len, 
-                            pad_to_max_length = True,
-                            return_attention_mask = True, 
-                            return_tensors = 'pt'
-                    )
-        
+            sent,
+            add_special_tokens=True,
+            max_length=model_args.max_len,
+            pad_to_max_length=True,
+            return_attention_mask=True,
+            return_tensors='pt'
+        )
+
         input_ids.append(encoded_dict['input_ids'])
-        
+
         attention_masks.append(encoded_dict['attention_mask'])
 
     input_ids = torch.cat(input_ids, dim=0)
@@ -136,14 +135,14 @@ if __name__ == '__main__':
     labels = torch.tensor(labels)
 
     logger.debug(f"Sentence sample.\nOriginal: {sentences[0]}\nToken IDs: {input_ids[0]}")
-    
+
     train_dataset = TensorDataset(input_ids, attention_masks, labels)
 
     train_dataloader = DataLoader(
-                train_dataset,  
-                sampler = RandomSampler(train_dataset), 
-                batch_size = training_args.batch_size 
-            )
+        train_dataset,
+        sampler=RandomSampler(train_dataset),
+        batch_size=training_args.batch_size
+    )
 
     ## load validation dataset
     val_df = pd.read_csv('data/validation.csv', usecols=cols_to_use)
@@ -159,17 +158,17 @@ if __name__ == '__main__':
     # For every sentence...
     for sent in sentences:
         encoded_dict = tokenizer.encode_plus(
-                            sent,                      # Sentence to encode.
-                            add_special_tokens = True, # Add '[CLS]' and '[SEP]'
-                            max_length = model_args.max_len,           # Pad & truncate all sentences.
-                            pad_to_max_length = True,
-                            return_attention_mask = True,   # Construct attn. masks.
-                            return_tensors = 'pt',     # Return pytorch tensors.
-                    )
-        
+            sent,  # Sentence to encode.
+            add_special_tokens=True,  # Add '[CLS]' and '[SEP]'
+            max_length=model_args.max_len,  # Pad & truncate all sentences.
+            pad_to_max_length=True,
+            return_attention_mask=True,  # Construct attn. masks.
+            return_tensors='pt',  # Return pytorch tensors.
+        )
+
         # Add the encoded sentence to the list.    
         input_ids.append(encoded_dict['input_ids'])
-        
+
         # And its attention mask (simply differentiates padding from non-padding).
         attention_masks.append(encoded_dict['attention_mask'])
 
@@ -186,22 +185,23 @@ if __name__ == '__main__':
     val_dataset = TensorDataset(input_ids, attention_masks, labels)
 
     val_dataloader = DataLoader(
-                        val_dataset, 
-                        sampler = SequentialSampler(val_dataset), 
-                        batch_size = training_args.batch_size  
-                    )
+        val_dataset,
+        sampler=SequentialSampler(val_dataset),
+        batch_size=training_args.batch_size
+    )
 
     optimizer = AdamW(filter(lambda param: param.requires_grad, model.parameters()),
-                    lr = training_args.learning_rate, 
-                    eps = training_args.adam_epsilon
-                    )
+                      lr=training_args.learning_rate,
+                      eps=training_args.adam_epsilon
+                      )
 
     total_steps = len(train_dataloader) * training_args.n_epochs
 
-    scheduler = get_linear_schedule_with_warmup(optimizer, 
-                                                num_warmup_steps = 0,
-                                                num_training_steps = total_steps)
+    scheduler = get_linear_schedule_with_warmup(optimizer,
+                                                num_warmup_steps=0,
+                                                num_training_steps=total_steps)
 
-    trainer = Trainer(model, optimizer, scheduler, train_dataloader, val_dataloader, n_epochs=training_args.n_epochs, args=training_args)
+    trainer = Trainer(model, optimizer, scheduler, train_dataloader, val_dataloader, n_epochs=training_args.n_epochs,
+                      args=training_args)
 
     trainer.train_model(model_args.model_checkpoint_path)
