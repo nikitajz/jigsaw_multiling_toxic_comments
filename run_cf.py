@@ -47,7 +47,7 @@ if __name__ == '__main__':
         output_hidden_states=False,
     )
 
-    if training_args.freeze_backbone:
+    if model_args.freeze_backbone:
         logger.warning("Freezing roberta model (only classifier going to be trained)")
         for name, param in model.named_parameters():
             if 'classifier' not in name:  # classifier layer

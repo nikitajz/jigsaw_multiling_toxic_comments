@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import List, Optional, Union
 
 import torch
 
@@ -12,32 +12,42 @@ class ModelArgs:
         default=None, metadata={"help": "Pretrained config name or path if not the same as model_name"})
     tokenizer_name: Optional[str] = field(
         default=None, metadata={"help": "Pretrained tokenizer name or path if not the same as model_name"})
+    model_checkpoint_path: Optional[str] = field(
+        default='.model_checkpoint',
+        metadata={"help": "Path to save to and load from fine-tuned model (checkpoint)"})
+    freeze_backbone: bool = field(
+        default=True, metadata={"help": "Freeze Roberta model and train only classifier"})
+    load_checkpoint: bool = field(
+        default=False, metadata={"help": "Whether to load pretrained model from last checkpoint"})
     max_len: int = field(
         default=256, metadata={"help": "Max number of tokens for model input"})
     cache_dir: Optional[str] = field(
         default=None, metadata={"help": "Where do you want to store the pretrained models downloaded from s3"})
-    model_checkpoint_path: Optional[str] = field(
-        default='.model_checkpoint',
-        metadata={"help": "Path to save to and load from fine-tuned model (checkpoint)"})
-    load_checkpoint: bool = field(
-        default=False, metadata={"help": "Whether to load pretrained model from last checkpoint"})
 
 
 @dataclass
 class TrainingArgs:
-    dataset: str = field(
-        default='en', metadata={
-            "help": "Which dataset to use for training. Possible options are: `en`, `google-translated`, `wiki`, `cc`"})
+    data_folder: str = field(
+        default="data/", metadata={"help": "Folder where data located"})
+    data_train: Union[str, List[str]] = field(
+        default="jigsaw-toxic-comment-train.csv",
+        metadata={"help": "Train filename, list of filenames of pattern pathlib.glob"})
+    data_valid: Union[str, List[str]] = field(
+        default="validation.csv",
+        metadata={"help": "Validation filename, list of filenames of pattern pathlib.glob"})
+    data_test: Union[str, List[str]] = field(
+        default="test.csv",
+        metadata={"help": "Test filename, list of filenames of pattern pathlib.glob"})
     resample: bool = field(
         default=False, metadata={"help": "Resample to have equal samples per class"})
     seed: int = field(
         default=42, metadata={"help": "Random number"})
     device: str = field(
         default='cuda:0', metadata={"help": "Device to train model on"})
-    freeze_backbone: bool = field(
-        default=False, metadata={"help": "Freeze Roberta model and train only classifier"})
     n_epochs: int = field(
         default=2, metadata={"help": "Number of epochs to train"})
+    accumulate_grad_batches: int = field(
+        default=1, metadata={"help": "Steps interval to accumulate gradient."})
     batch_size: int = field(
         default=16, metadata={"help": "Batch size"})
     learning_rate: float = field(
@@ -46,14 +56,13 @@ class TrainingArgs:
         default=0.0, metadata={"help": "Weight decay if we apply some."})
     adam_epsilon: float = field(
         default=1e-8, metadata={"help": "Epsilon for Adam optimizer."})
+    warmup_steps: int = field(
+        default=7, metadata={"help": "Warm up steps for optimizer."})
     max_grad_norm: float = field(
         default=1.0, metadata={"help": "Max gradient norm."})
-    num_train_epochs: float = field(
-        default=3.0, metadata={"help": "Total number of training epochs to perform."})
-    log_step: Optional[int] = field(
-        default=40, metadata={"help": "Log training metrics every $step"})
-    eval_on_log_step: bool = field(
-        default=False, metadata={"help": "Evaluate on validation dataset on each log step"})
+    val_log_step: Optional[int] = field(
+        default=1.0, metadata={"help": "How often within one training epoch to check validation set." +
+                                       "Set float for fraction or int for steps."})
     tensorboard_enable: bool = field(
         default=False, metadata={"help": "Whether to use tensorboard"})
     tb_log_dir: str = field(
@@ -64,4 +73,4 @@ class TrainingArgs:
         default=2, metadata={"help": "Early stopping patience"})
 
     def __post_init__(self):
-        self.device = torch.device(self.device if torch.cuda.is_available() else "cpu")
+        self.device: torch.device = torch.device(self.device if torch.cuda.is_available() else "cpu")

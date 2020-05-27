@@ -18,13 +18,13 @@ def format_time(elapsed):
     return str(datetime.timedelta(seconds=elapsed_rounded))
 
 
-def load_or_parse_args(ArgsSeq, verbose=False):
+def load_or_parse_args(argseq, verbose=False):
     """Load arguments from json if only one parameter with .json extension is provided. 
     Otherwise parse arguments provided in command line.
 
     Parameters
     ----------
-    ArgsSeq : Iterable[Dataclass]
+    argseq : Iterable[Dataclass]
         Sequence of dataclass, e.g. (ModelArgs, TrainingArgs)
     verbose : bool
         Whether to print parsed arguments
@@ -34,7 +34,7 @@ def load_or_parse_args(ArgsSeq, verbose=False):
     Iterable[Dataclass]
         Return parsed args one per each provided dataclass
     """
-    parser = HfArgumentParser(ArgsSeq)
+    parser = HfArgumentParser(argseq)
 
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
         # If we pass only one argument to the script and it's the path to a json file,

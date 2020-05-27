@@ -7,7 +7,10 @@
 data/*
 random/*
 notebooks/*
-runs/* 
+runs/*
+tb_logs/*
+lightning_logs/*
+default/*
 .model_checkpoint/*
 .vector_cache
 .run_cache/*
