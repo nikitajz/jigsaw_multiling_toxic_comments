@@ -6,16 +6,17 @@
   "freeze_backbone": true,
   "load_checkpoint": true,
   "max_len": 128,
-  "data_folder": "data/",
+  "data_path": "data/",
   "data_train": [
     "jigsaw-toxic-comment-train.csv",
     "jigsaw-unintended-bias-train.csv"
   ],
   "resample": true,
-  "device": "cuda:0",
+  "num_workers": 12,
+  "gpus": 2,
   "n_epochs": 2,
   "batch_size": 32,
   "learning_rate": 5e-5,
   "tensorboard_enable": true,
-  "val_log_step": 50
+  "val_check_interval": 50
 }

@@ -1,8 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Union
 
-import torch
-
 
 @dataclass
 class ModelArgs:
@@ -27,7 +25,7 @@ class ModelArgs:
 
 @dataclass
 class TrainingArgs:
-    data_folder: str = field(
+    data_path: str = field(
         default="data/", metadata={"help": "Folder where data located"})
     data_train: Union[str, List[str]] = field(
         default="jigsaw-toxic-comment-train.csv",
@@ -38,12 +36,17 @@ class TrainingArgs:
     data_test: Union[str, List[str]] = field(
         default="test.csv",
         metadata={"help": "Test filename, list of filenames of pattern pathlib.glob"})
+    reload_dataloaders_every_epoch: bool = field(
+        default=False, metadata={"help": "Reload datasets on each epoch or not"})
     resample: bool = field(
         default=False, metadata={"help": "Resample to have equal samples per class"})
+    num_workers: int = field(
+        default=1, metadata={"help": "How many workers to use for dataloader"})
     seed: int = field(
         default=42, metadata={"help": "Random number"})
-    device: str = field(
-        default='cuda:0', metadata={"help": "Device to train model on"})
+    gpus: Union[str, int, List[str]] = field(
+        default=1, metadata={"help": "Device to train model on. Int for number of gpus," +
+                                     " str to select specific one or List[str] to select few specific gpus"})
     n_epochs: int = field(
         default=2, metadata={"help": "Number of epochs to train"})
     accumulate_grad_batches: int = field(
@@ -58,9 +61,9 @@ class TrainingArgs:
         default=1e-8, metadata={"help": "Epsilon for Adam optimizer."})
     warmup_steps: int = field(
         default=7, metadata={"help": "Warm up steps for optimizer."})
-    max_grad_norm: float = field(
-        default=1.0, metadata={"help": "Max gradient norm."})
-    val_log_step: Optional[int] = field(
+    gradient_clip_val: float = field(
+        default=0, metadata={"help": "Clip gradient value. Set 0 to disable."})
+    val_check_interval: Optional[int] = field(
         default=1.0, metadata={"help": "How often within one training epoch to check validation set." +
                                        "Set float for fraction or int for steps."})
     tensorboard_enable: bool = field(
@@ -71,6 +74,3 @@ class TrainingArgs:
         default=".early_stopping", metadata={"help": "Checkpoint path."})
     patience: int = field(
         default=2, metadata={"help": "Early stopping patience"})
-
-    def __post_init__(self):
-        self.device: torch.device = torch.device(self.device if torch.cuda.is_available() else "cpu")

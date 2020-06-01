@@ -176,27 +176,27 @@ class XLMRobertaSeqClassificationPL(pl.LightningModule):
 
     def train_dataloader(self):
         return DataLoader(
-            ToxicMultilangDataset(self.hparams.data_folder,
+            ToxicMultilangDataset(self.hparams.data_path,
                                   self.hparams.data_train,
                                   kind="train",
                                   resample=True),
             batch_size=self.hparams.batch_size,
             shuffle=True,
             # sampler: Optional[Sampler[int]] = ...,
-            # num_workers: int = ...,
+            num_workers=self.hparams.num_workers,
             collate_fn=TokenizerCollateFn()
         )
 
     def val_dataloader(self):
         return DataLoader(
-            ToxicMultilangDataset(self.hparams.data_folder,
+            ToxicMultilangDataset(self.hparams.data_path,
                                   self.hparams.data_valid,
                                   kind="valid",
                                   resample=False),
             batch_size=self.hparams.batch_size,
             shuffle=False,
             # sampler: Optional[Sampler[int]] = ...,
-            # num_workers: int = ...,
+            num_workers=self.hparams.num_workers,
             collate_fn=TokenizerCollateFn()
         )
 
@@ -217,16 +217,10 @@ def main():
     m_args, tr_args = load_or_parse_args((ModelArgs, TrainingArgs), verbose=True)
     tb_logger = loggers.TensorBoardLogger('tb_logs/')
     model = XLMRobertaSeqClassificationPL(m_args, tr_args)
-    trainer = pl.Trainer(gpus=1,
-                         max_epochs=tr_args.n_epochs,
-                         progress_bar_refresh_rate=50,
-                         val_check_interval=50,  # tr_args.val_log_step or 1.0,
-                         accumulate_grad_batches=tr_args.accumulate_grad_batches,
-                         gradient_clip_val=1.0,
-                         logger=tb_logger,
-                         reload_dataloaders_every_epoch=True,
-                         auto_lr_find=True
-                         )
+    trainer = pl.Trainer.from_argparse_args(tr_args, fast_dev_run=True,
+                                            # auto_lr_find=True
+                                            # logger=tb_logger,
+                                            )
     trainer.fit(model)
 
 
