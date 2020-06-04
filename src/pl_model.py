@@ -1,4 +1,5 @@
 import dataclasses
+import datetime
 import logging
 import warnings
 from argparse import Namespace
@@ -20,8 +21,6 @@ from transformers import (XLMRobertaConfig,
 
 from src.config_base import ModelArgs, TrainingArgs
 from src.utils import load_or_parse_args
-
-logger = logging.getLogger(__name__)
 
 
 class TokenizerCollateFn:
@@ -56,6 +55,8 @@ class ToxicMultilangDataset(Dataset):
                 whether to resample dataframe
         """
         super().__init__()
+        self.logger = logging.getLogger(__name__)
+
         assert kind in ["train", "valid", "test"], "Incorrect kind, should be one of three: ['train', 'valid', 'test']"
         self.column = SimpleNamespace(**{"text": "comment_text",
                                          "target": "toxic" if kind != "test" else None})
@@ -83,6 +84,10 @@ class ToxicMultilangDataset(Dataset):
             self.column.text = "content"
             self.data = pd.read_csv(path / filenames, usecols=[self.column.content])  # , self.column.lang
 
+        pos_samples = self.data[self.data[self.column.target] == 1].shape[0]
+        self.logger.info(f"{kind.capitalize()} dataset shape: ({','.join(map(str, self.data.shape))})."
+                         f" Target positive samples ratio: {pos_samples / self.data.shape[0]:3f}")
+
     def __getitem__(self, idx):
         row = self.data.iloc[idx]
         return row[self.column.text], row.get(self.column.target, None)
@@ -92,11 +97,11 @@ class ToxicMultilangDataset(Dataset):
 
 
 class XLMRobertaSeqClassificationPL(pl.LightningModule):
-    def __init__(self, model_args, training_args, num_labels=2, mode="base", **config_kwargs):
+    def __init__(self, model_args, training_args, num_labels=2, **config_kwargs):
         """Initialize model"""
         super().__init__()
         self.model_args = model_args
-        self.hparams = Namespace(**dataclasses.asdict(training_args))
+        self.hparams = Namespace(**dataclasses.asdict(training_args), **dataclasses.asdict(model_args))
         cache_dir = self.model_args.cache_dir if self.model_args.cache_dir else None
 
         model_name_or_path = model_args.model_checkpoint_path if model_args.load_checkpoint else model_args.model_name
@@ -148,7 +153,7 @@ class XLMRobertaSeqClassificationPL(pl.LightningModule):
         b_labels = batch[2]
 
         loss, logits = self(b_input_ids, b_input_mask, labels=b_labels)
-        tensorboard_logs = {'train_loss': loss}
+        tensorboard_logs = {'train/train_loss': loss}
         return {'loss': loss, 'log': tensorboard_logs}
 
     def validation_step(self, batch, batch_idx):
@@ -168,7 +173,7 @@ class XLMRobertaSeqClassificationPL(pl.LightningModule):
 
         auc_score = roc_auc_score(val_labels.cpu(), val_preds.cpu())
         auc = torch.tensor(auc_score)
-        tensorboard_logs = {'epoch/val_loss': avg_loss, 'epoch/val_auc': auc, 'epoch/val_accuracy': accuracy}
+        tensorboard_logs = {'train/val_loss': avg_loss, 'train/val_auc': auc, 'train/val_accuracy': accuracy}
         return {'val_loss': avg_loss, 'log': tensorboard_logs}
 
     # def prepare_data(self):
@@ -179,7 +184,7 @@ class XLMRobertaSeqClassificationPL(pl.LightningModule):
             ToxicMultilangDataset(self.hparams.data_path,
                                   self.hparams.data_train,
                                   kind="train",
-                                  resample=True),
+                                  resample=self.hparams.resample),
             batch_size=self.hparams.batch_size,
             shuffle=True,
             # sampler: Optional[Sampler[int]] = ...,
@@ -208,20 +213,45 @@ class XLMRobertaSeqClassificationPL(pl.LightningModule):
 
 
 def main():
+    logger = logging.getLogger(__name__)
+
+    dt_str = datetime.datetime.now().strftime("%y%m%d_%H-%M")
+    path_output = Path("experiments") / dt_str
+    path_output.mkdir(exist_ok=True, parents=True)
+
     warnings.filterwarnings('ignore', category=UserWarning)
-    logging.basicConfig(
-        format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
-        datefmt="%m/%d/%Y %H:%M:%S",
-        level=logging.INFO
-    )
     m_args, tr_args = load_or_parse_args((ModelArgs, TrainingArgs), verbose=True)
-    tb_logger = loggers.TensorBoardLogger('tb_logs/')
-    model = XLMRobertaSeqClassificationPL(m_args, tr_args)
-    trainer = pl.Trainer.from_argparse_args(tr_args, fast_dev_run=True,
-                                            # auto_lr_find=True
-                                            # logger=tb_logger,
-                                            )
+    hparams = Namespace(**dataclasses.asdict(m_args), **dataclasses.asdict(tr_args))
+
+    path_log_file = path_output / "train.log"
+    logging.basicConfig(
+        format="%(asctime)s - %(levelname)s - %(name)s -  %(message)s",
+        datefmt="%m/%d/%Y %H:%M:%S",
+        level=logging.INFO,
+        filename=path_log_file,
+        filemode='w'
+    )
+    if not hparams.load_checkpoint:
+        logger.info("Creating the model and trainer.")
+        pl_loggers = [loggers.TestTubeLogger(save_dir=path_output),
+                      loggers.TensorBoardLogger('tb_logs/')]
+        model = XLMRobertaSeqClassificationPL(m_args, tr_args)
+        trainer = pl.Trainer.from_argparse_args(hparams,
+                                                # fast_dev_run=True,
+                                                default_root_dir=path_output,
+                                                # weights_save_path=path_output,
+                                                weights_summary=None,
+                                                # auto_lr_find=True,
+                                                logger=pl_loggers,
+                                                progress_bar_refresh_rate=10
+                                                )
+    else:
+        logger.info("Loading the model and trainer from checkpoint:", hparams.model_checkpoint_path)
+        model = XLMRobertaSeqClassificationPL.load_from_checkpoint(hparams.model_checkpoint_path)
+        trainer = pl.Trainer.resume_from_checkpoint(hparams.model_checkpoint_path)
+
     trainer.fit(model)
+    trainer.save_checkpoint(path_output / "model.pt")
 
 
 if __name__ == '__main__':

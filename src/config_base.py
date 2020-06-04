@@ -39,7 +39,9 @@ class TrainingArgs:
     reload_dataloaders_every_epoch: bool = field(
         default=False, metadata={"help": "Reload datasets on each epoch or not"})
     resample: bool = field(
-        default=False, metadata={"help": "Resample to have equal samples per class"})
+        default=False, metadata={"help": "Resample train data to have equal samples per class"})
+    shuffle: bool = field(
+        default=False, metadata={"help": "Shuffle train data"})
     num_workers: int = field(
         default=1, metadata={"help": "How many workers to use for dataloader"})
     seed: int = field(
@@ -66,6 +68,8 @@ class TrainingArgs:
     val_check_interval: Optional[int] = field(
         default=1.0, metadata={"help": "How often within one training epoch to check validation set." +
                                        "Set float for fraction or int for steps."})
+    early_stop_callback: bool = field(
+        default=True, metadata={"help": "Whether to use early stopping"})
     tensorboard_enable: bool = field(
         default=False, metadata={"help": "Whether to use tensorboard"})
     tb_log_dir: str = field(

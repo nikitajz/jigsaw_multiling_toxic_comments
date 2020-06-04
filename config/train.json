@@ -2,9 +2,9 @@
   "model_name": "xlm-roberta-base",
   "config_name": "xlm-roberta-base",
   "tokenizer_name": "xlm-roberta-base",
-  "model_checkpoint_path": ".model_checkpoint",
   "freeze_backbone": true,
-  "load_checkpoint": true,
+  "model_checkpoint_path": "experiments/checkpoints/",
+  "load_checkpoint": false,
   "max_len": 128,
   "data_path": "data/",
   "data_train": [
@@ -12,11 +12,13 @@
     "jigsaw-unintended-bias-train.csv"
   ],
   "resample": true,
+  "shuffle": true,
   "num_workers": 12,
-  "gpus": 2,
+  "gpus": 1,
   "n_epochs": 2,
   "batch_size": 32,
-  "learning_rate": 5e-5,
+  "learning_rate": 5e-6,
   "tensorboard_enable": true,
+  "early_stop_callback": true,
   "val_check_interval": 50
 }
