@@ -12,10 +12,12 @@ experiments/*
 runs/*
 tb_logs/*
 lightning_logs/*
+wandb/*
 default/*
 .model_checkpoint/*
 .vector_cache
 .run_cache/*
+.hf_cache
 
 # IDEs
 .DS_Store
