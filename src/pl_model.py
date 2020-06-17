@@ -16,8 +16,6 @@ from transformers import (XLMRobertaConfig,
                           get_linear_schedule_with_warmup
                           )
 
-from run_pl_train import main
-
 
 class TokenizerCollateFn:
     def __init__(self, max_tokens=512, model_name="xlm-roberta-base"):
@@ -206,7 +204,3 @@ class XLMRobertaSeqClassificationPL(pl.LightningModule):
 
     def total_steps(self):
         return len(self.train_dataloader()) // self.hparams.accumulate_grad_batches * self.hparams.n_epochs
-
-
-if __name__ == '__main__':
-    main()

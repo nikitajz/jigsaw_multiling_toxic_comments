@@ -53,3 +53,7 @@ def main():
 
     trainer.fit(model)
     trainer.save_checkpoint(path_output / "model.pt")
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,29 @@
+{
+  "model_name_or_path": "distilbert-base-multilingual-cased",
+  "config_name": "distilbert-base-multilingual-cased",
+  "tokenizer_name": "distilbert-base-multilingual-cased",
+  "model_mode": "language-modeling",
+  "output_dir": "data/lang_model/fastdevrun/",
+  "load_checkpoint": false,
+  "max_len": 192,
+  "data_path": "data/mlm_text",
+  "data_train": "jjigsaw-toxic-comment-train-lm.txt",
+  "data_test": "validation-lm.txt",
+  "valid_pct": 0.5,
+  "shuffle": true,
+  "num_workers": 12,
+  "max_epochs": 100,
+  "gpus": [
+    1
+  ],
+  "batch_size": 16,
+  "learning_rate": 5e-6,
+  "wandb_enable": true,
+  "early_stop_callback": true,
+  "val_check_interval": 50,
+  "mlm": true,
+  "mlm_probability": 0.15,
+  "seed": 42,
+  "do_train": true,
+  "do_test": true
+}
