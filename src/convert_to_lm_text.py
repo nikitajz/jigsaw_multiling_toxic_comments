@@ -6,8 +6,8 @@ import pandas as pd
 FILES = [
     "jigsaw-toxic-comment-train.csv",
     "jigsaw-unintended-bias-train.csv",
-    "validation.csv",
-    "test.csv"
+    "test.csv",
+    "validation.csv"
 ]
 INPUT_DIR = "data"
 OUTPUT_DIR = "data/mlm_text/"

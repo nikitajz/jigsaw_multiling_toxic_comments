@@ -83,8 +83,8 @@ class BaseTransformer(pl.LightningModule):
 
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        logs = {'val_loss': avg_loss}
-        return {'loss': avg_loss, 'logs': logs, 'progress_bar': logs}
+        logs = {'val_loss': avg_loss, 'perplexity': torch.exp(avg_loss)}
+        return {'val_loss': avg_loss, 'logs': logs, 'progress_bar': logs}
 
     def test_step(self, batch, batch_nb):
         return self.validation_step(batch, batch_nb)

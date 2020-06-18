@@ -51,8 +51,8 @@ class TrainArgs:
     val_check_interval: Optional[int] = field(
         default=1.0, metadata={"help": "How often within one training epoch to check validation set." +
                                        "Set float for fraction or int for steps."})
-    limit_val_batches: int = field(
-        default=0.1, metadata={"help": "How much of validation dataset to check (floats = percent, int = num_batches)"})
+    limit_val_batches: float = field(
+        default=1.0, metadata={"help": "How much of validation dataset to check (floats = percent, int = num_batches)"})
     reload_dataloaders_every_epoch: bool = field(
         default=False, metadata={"help": "Reload datasets on each epoch or not"})
     resample: bool = field(
@@ -64,7 +64,7 @@ class TrainArgs:
     min_epochs: int = field(
         default=1, metadata={"help": "Force training for at least these many epochs"})
     max_epochs: int = field(
-        default=1000, metadata={"help": "Stop training once this number of epochs is reached"})
+        default=10, metadata={"help": "Stop training once this number of epochs is reached"})
     gpus: Optional[int] = field(  # Union[int, str, List[int], None]
         default=None, metadata={"help": "Device to train model on. Int for number of gpus," +
                                         " str to select specific one or List[str] to select few specific gpus"})

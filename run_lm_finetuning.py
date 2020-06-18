@@ -6,6 +6,7 @@ from argparse import Namespace
 from datetime import datetime
 
 import pytorch_lightning as pl
+from pytorch_lightning import loggers
 
 from src.config_pl import ModelArgs, TrainArgs
 from src.pl_distilbert_mlm import BaseTransformer, LoggingCallback
@@ -27,8 +28,8 @@ def main():
     seed_everything(hparams.seed)
     logger.info(f"Effective batch size: {hparams.effective_batch_size}")
 
-    if os.path.exists(hparams.output_dir) and os.listdir(hparams.output_dir) and hparams.do_train:
-        raise ValueError("Output directory ({}) already exists and is not empty.".format(hparams.output_dir))
+    # if os.path.exists(hparams.output_dir) and os.listdir(hparams.output_dir) and hparams.do_train:
+    #     raise ValueError("Output directory ({}) already exists and is not empty.".format(hparams.output_dir))
 
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         filepath=hparams.output_dir, prefix="checkpoint", monitor="val_loss", mode="min", save_top_k=5
@@ -40,18 +41,18 @@ def main():
         logs_dir = os.path.join(hparams.output_dir, "pl_logs")
         os.makedirs(logs_dir, exist_ok=True)
 
-        pl_logger = True
+        pl_loggers = [loggers.TestTubeLogger(save_dir=hparams.output_dir, name="test_tube", create_git_tag=True)]
         if hparams.wandb_enable:
-            from pytorch_lightning.loggers import WandbLogger
-            dt_now_str = datetime.strftime(datetime.now(), "%y%d%m_%H%M")
+            dt_now_str = datetime.strftime(datetime.now(), "%y%m%d_%H%M")
             wandb_experiment_name = hparams.model_name_or_path.split("-")[0] + "@" + dt_now_str
-            pl_logger = WandbLogger(name=wandb_experiment_name, project='jigsaw_multilang')
+            pl_loggers.append(loggers.WandbLogger(name=wandb_experiment_name, project='jigsaw_multilang'))
 
         trainer = pl.Trainer.from_argparse_args(hparams,
                                                 # fast_dev_run=True,
                                                 # auto_lr_find=True,
-                                                logger=pl_logger,
+                                                logger=pl_loggers,
                                                 progress_bar_refresh_rate=100,
+                                                # distributed_backend="dp",
                                                 checkpoint_callback=checkpoint_callback,
                                                 default_root_dir=logs_dir,
                                                 callbacks=[LoggingCallback()]
