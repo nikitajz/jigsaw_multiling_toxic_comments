@@ -41,18 +41,22 @@ class TrainArgs:
     # data_valid: PathType = field(
     #     default="validation.csv",
     #     metadata={"help": "Validation filename, list of filenames of pattern pathlib.glob"})
+    shuffle: bool = field(
+        default=False, metadata={"help": "Shuffle train data"})
     data_test: PathType = field(
         default="test.csv",
         metadata={"help": "Test filename, list of filenames of pattern pathlib.glob"})
     valid_pct: float = field(
-        default=0.1, metadata={"help": "What percent of training data to use for validation"}
-    )
+        default=0.1, metadata={"help": "What percent of training data to use for validation"})
+    val_check_interval: Optional[int] = field(
+        default=1.0, metadata={"help": "How often within one training epoch to check validation set." +
+                                       "Set float for fraction or int for steps."})
+    limit_val_batches: int = field(
+        default=0.1, metadata={"help": "How much of validation dataset to check (floats = percent, int = num_batches)"})
     reload_dataloaders_every_epoch: bool = field(
         default=False, metadata={"help": "Reload datasets on each epoch or not"})
     resample: bool = field(
         default=False, metadata={"help": "Resample train data to have equal samples per class"})
-    shuffle: bool = field(
-        default=False, metadata={"help": "Shuffle train data"})
     num_workers: int = field(
         default=1, metadata={"help": "How many workers to use for dataloader"})
     seed: int = field(
@@ -85,9 +89,6 @@ class TrainArgs:
         default=7, metadata={"help": "Warm up steps for optimizer."})
     gradient_clip_val: float = field(
         default=1.0, metadata={"help": "Clip gradient value. Set 0 to disable."})
-    val_check_interval: Optional[int] = field(
-        default=1.0, metadata={"help": "How often within one training epoch to check validation set." +
-                                       "Set float for fraction or int for steps."})
     early_stop_callback: bool = field(
         default=True, metadata={"help": "Whether to use early stopping"})
     tensorboard_enable: bool = field(

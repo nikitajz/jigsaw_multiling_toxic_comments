@@ -70,27 +70,29 @@ class BaseTransformer(pl.LightningModule):
         b_labels = batch["masked_lm_labels"]
 
         loss, logits = self(b_input_ids, b_labels)
-        # logs = {'train/train_loss': loss}
-        return {'loss': loss}  # , 'log': logs}
+        logs = {'epoch': batch_idx, 'train/train_loss': loss}
+        return {'loss': loss, 'log': logs}
 
     def validation_step(self, batch, batch_idx):
         b_input_ids = batch["input_ids"]
         b_labels = batch["masked_lm_labels"]
 
         loss, logits = self(b_input_ids, b_labels)
-        # logs = {'train/valid_loss': loss}
-        return {'loss': loss}  # , 'log': logs}
+        logs = {'epoch': batch_idx, 'train/val_loss': loss}
+        return {'val_loss': loss, 'log': logs}
 
     def validation_epoch_end(self, outputs):
-        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        return {'val_loss': avg_loss}
+        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
+        logs = {'val_loss': avg_loss}
+        return {'loss': avg_loss, 'logs': logs, 'progress_bar': logs}
 
     def test_step(self, batch, batch_nb):
         return self.validation_step(batch, batch_nb)
 
     def test_epoch_end(self, outputs):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        return {'test_loss': avg_loss}
+        logs = {'test_loss': avg_loss}
+        return {'test_loss': avg_loss, 'log': logs}
 
     def is_logger(self):
         return self.trainer.local_rank <= 0
@@ -138,11 +140,6 @@ class BaseTransformer(pl.LightningModule):
         return (len(self.train_dataloader()) // self.hparams.effective_batch_size
                 // self.hparams.accumulate_grad_batches * max(1, self.hparams.min_epochs))
 
-    # def get_tqdm_dict(self):
-    #     avg_loss = getattr(self.trainer, "avg_loss", 0.0)
-    #     tqdm_dict = {"loss": "{:.3f}".format(avg_loss), "lr": self.lr_scheduler.get_last_lr()[-1]}
-    #     return tqdm_dict
-
     def prepare_dataset(self):
         dataset = LineByLineTextDataset(tokenizer=self.tokenizer,
                                         file_path=os.path.join(self.hparams.data_path, self.hparams.data_train),
@@ -182,9 +179,7 @@ class BaseTransformer(pl.LightningModule):
         dataset = LineByLineTextDataset(tokenizer=self.tokenizer,
                                         file_path=os.path.join(self.hparams.data_path, self.hparams.data_test),
                                         block_size=self.hparams.max_len)
-        mlm_collator = DataCollatorForLanguageModeling(
-            tokenizer=self.tokenizer, mlm=self.hparams.mlm, mlm_probability=self.hparams.mlm_probability
-        )
+
         dataloader = DataLoader(
             dataset,
             batch_size=self.hparams.batch_size,
@@ -207,14 +202,14 @@ class BaseTransformer(pl.LightningModule):
 
 
 class LoggingCallback(pl.Callback):
-    def on_validation_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
-        logger.info("***** Validation results *****")
-        if pl_module.is_logger():
-            metrics = trainer.callback_metrics
-            # Log results
-            for key in sorted(metrics):
-                if key not in ["log", "progress_bar"]:
-                    logger.info("{} = {}\n".format(key, str(metrics[key])))
+    # def on_validation_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
+    #     logger.info("***** Validation results *****")
+    #     if pl_module.is_logger():
+    #         metrics = trainer.callback_metrics
+    #         # Log results
+    #         for key in sorted(metrics):
+    #             if key not in ["log", "progress_bar"]:
+    #                 logger.info("{} = {}\n".format(key, str(metrics[key])))
 
     def on_test_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
         logger.info("***** Test results *****")
