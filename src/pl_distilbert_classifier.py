@@ -192,9 +192,12 @@ class DistilBERTClassifier(pl.LightningModule):
                                         self.hparams.data_train,
                                         kind="train",
                                         resample=self.hparams.resample)
-        train_size = int(self.hparams.valid_pct * len(dataset))
-        test_size = len(dataset) - train_size
-        self.train_dataset, self.val_dataset = random_split(dataset, [train_size, test_size])
+        if isinstance(self.hparams.val_split, float):
+            val_size = int(len(dataset) * self.hparams.val_split)
+        else:
+            val_size = self.hparams.val_split
+        train_size = len(dataset) - val_size
+        self.train_dataset, self.val_dataset = random_split(dataset, [train_size, val_size])
         return None
 
     def train_dataloader(self):

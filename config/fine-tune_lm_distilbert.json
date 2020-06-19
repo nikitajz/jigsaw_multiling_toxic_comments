@@ -10,7 +10,7 @@
   "data_train": "jigsaw-combined-train-test-valid-tail-reduced-100k-lm.txt",
   "data_test": "validation1k-lm.txt",
   "shuffle": true,
-  "valid_pct": 0.5,
+  "val_split": 0.5,
   "val_check_interval": 1000,
   "limit_val_batches": 1.0,
   "num_workers": 12,

@@ -48,8 +48,9 @@ class TrainArgs:
     data_test: PathType = field(
         default="test.csv",
         metadata={"help": "Test filename, list of filenames of pattern pathlib.glob"})
-    valid_pct: float = field(
-        default=0.1, metadata={"help": "What percent of training data to use for validation"})
+    val_split: int = field(
+        default=500, metadata={"help": "What part of training data to use for validation, specify float for percent or"
+                                       " int for number of samples"})
     val_check_interval: Optional[int] = field(
         default=1.0, metadata={"help": "How often within one training epoch to check validation set." +
                                        "Set float for fraction or int for steps."})
@@ -145,6 +146,6 @@ class TrainArgs:
     def __post_init__(self):
         if 0 < self.mlm_probability > 1.0:
             raise ValueError("Incorrect value for mlm_probability. Should be between 0 and 1.0, default=0.15 (15%)")
-        if 0 < self.valid_pct > 1.0:
-            raise ValueError("Incorrect value for valid_pct. Should be between 0 and 1.0, default=0.1 (10%)")
+        if isinstance(self.val_split, float) and 0 < self.self.val_split > 1.0:
+            raise ValueError("Incorrect value for val_split. Should be between 0.0 and 1.0 or integer")
         self.effective_batch_size = self.batch_size * self.n_devices

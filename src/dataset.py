@@ -71,9 +71,11 @@ class ToxicMultilangDataset(Dataset):
                 self.logger.info(f"Resampled train dataset size: {self.data.shape}")
         elif kind == "valid":
             self.data = pd.read_csv(path / filenames, usecols=[self.column.text, self.column.target])
+            self.logger.info(f"Validation dataset size: {self.data.shape}")
         elif kind == "test":
             self.column.text = "content"
             self.data = pd.read_csv(path / filenames, usecols=[self.column.text])  # , self.column.lang
+            self.logger.info(f"Test dataset size: {self.data.shape}")
 
         pos_samples = self.data[self.data[self.column.target] == 1].shape[0]
         self.logger.info(f"{kind.capitalize()} dataset shape: ({','.join(map(str, self.data.shape))})."

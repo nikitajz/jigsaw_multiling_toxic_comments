@@ -7,6 +7,7 @@ from datetime import datetime
 
 import pytorch_lightning as pl
 from pytorch_lightning import loggers
+from pytorch_lightning.callbacks import LearningRateLogger
 
 from src.config_pl import ModelArgs, TrainArgs
 from src.pl_distilbert_classifier import DistilBERTClassifier
@@ -26,6 +27,7 @@ def main():
     logger.info(f"Effective batch size: {hparams.effective_batch_size}")
 
     pl_loggers = [loggers.TestTubeLogger(save_dir=hparams.output_dir, name="test_tube", create_git_tag=True)]
+    lr_logger = LearningRateLogger()
     if hparams.wandb_enable:
         dt_now_str = datetime.strftime(datetime.now(), "%y%m%d_%H%M")
         wandb_experiment_name = hparams.model_name_or_path.split("-")[0] + "@" + dt_now_str
@@ -38,12 +40,13 @@ def main():
         model = DistilBERTClassifier(hparams, mode=hparams.model_mode)
         trainer = pl.Trainer.from_argparse_args(hparams,
                                                 # fast_dev_run=True,
+                                                # auto_lr_find=True,
                                                 default_root_dir=logs_dir,
                                                 # weights_save_path=path_output,
-                                                weights_summary=None,
-                                                # auto_lr_find=True,
+                                                # weights_summary=None,
+                                                progress_bar_refresh_rate=50,
                                                 logger=pl_loggers,
-                                                progress_bar_refresh_rate=10
+                                                callbacks=[lr_logger],
                                                 )
     else:
         logger.info("Loading the model and trainer from checkpoint:", hparams.model_checkpoint_path)
