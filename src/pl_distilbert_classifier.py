@@ -81,7 +81,7 @@ class DistilBERTClassifier(pl.LightningModule):
         b_labels = batch[2]
 
         loss, _ = self(b_input_ids, b_input_mask, labels=b_labels)
-        logs = {'epoch': batch_idx, 'train/train_loss': loss}
+        logs = {'epoch': batch_idx, 'train_loss': loss}
         return {'loss': loss, 'log': logs}
 
     def validation_step(self, batch, batch_idx):
@@ -91,13 +91,12 @@ class DistilBERTClassifier(pl.LightningModule):
         loss, logits = self(b_input_ids, b_input_mask, labels=b_labels)
         b_pred = torch.argmax(logits, dim=1)
 
-        logs = {'epoch': batch_idx, 'train/val_loss': loss}
-        return {'batch/val_loss': loss, 'batch/val_pred': b_pred, 'batch/val_labels': b_labels, 'log': logs}
+        return {'val_loss': loss, 'val_pred': b_pred, 'val_labels': b_labels}
 
     def validation_epoch_end(self, outputs):
-        avg_loss = torch.stack([x['batch/val_loss'] for x in outputs]).mean()
-        val_preds = torch.cat([x['batch/val_pred'] for x in outputs])
-        val_labels = torch.cat([x['batch/val_labels'] for x in outputs])
+        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
+        val_preds = torch.cat([x['val_pred'] for x in outputs])
+        val_labels = torch.cat([x['val_labels'] for x in outputs])
         accuracy = torch.eq(val_preds, val_labels).float().mean()
 
         auc_score = roc_auc_score(val_labels.cpu(), val_preds.cpu())
@@ -113,13 +112,12 @@ class DistilBERTClassifier(pl.LightningModule):
         loss, logits = self(b_input_ids, b_input_mask, labels=b_labels)
         b_pred = torch.argmax(logits, dim=1)
 
-        logs = {'epoch': batch_idx, 'test_loss': loss}
-        return {'batch/test_loss': loss, 'batch/test_pred': b_pred, 'batch/test_labels': b_labels, 'logs': logs}
+        return {'test_loss': loss, 'test_pred': b_pred, 'test_labels': b_labels}
 
     def test_epoch_end(self, outputs):
-        avg_loss = torch.stack([x['batch/test_loss'] for x in outputs]).mean()
-        test_preds = torch.cat([x['batch/test_pred'] for x in outputs])
-        test_labels = torch.cat([x['batch/test_labels'] for x in outputs])
+        avg_loss = torch.stack([x['test_loss'] for x in outputs]).mean()
+        test_preds = torch.cat([x['test_pred'] for x in outputs])
+        test_labels = torch.cat([x['test_labels'] for x in outputs])
         accuracy = torch.eq(test_preds, test_labels).float().mean()
 
         auc_score = roc_auc_score(test_labels.cpu(), test_preds.cpu())

@@ -4,13 +4,19 @@
   "tokenizer_name": "distilbert-base-multilingual-cased",
   "model_mode": "sequence-classification",
   "model_mlm_finetuned": "data/lang_model/distilbertMLM/model-finetuned/",
-  "output_dir": "data/model/distilbertCF/",
+  "output_dir": "data/model/distilbert_transl_CF/",
   "load_checkpoint": false,
   "max_len": 192,
   "data_path": "data/",
   "data_train": [
     "jigsaw-toxic-comment-train.csv",
-    "jigsaw-unintended-bias-train.csv"
+    "jigsaw-unintended-bias-train.csv",
+    "translated/google-api/cleaned/jigsaw-toxic-comment-train-google-es-cleaned.csv.zip",
+    "translated/google-api/cleaned/jigsaw-toxic-comment-train-google-fr-cleaned.csv.zip",
+    "translated/google-api/cleaned/jigsaw-toxic-comment-train-google-it-cleaned.csv.zip",
+    "translated/google-api/cleaned/jigsaw-toxic-comment-train-google-pt-cleaned.csv.zip",
+    "translated/google-api/cleaned/jigsaw-toxic-comment-train-google-ru-cleaned.csv.zip",
+    "translated/google-api/cleaned/jigsaw-toxic-comment-train-google-tr-cleaned.csv.zip"
   ],
   "data_test": "validation.csv",
   "resample": true,

@@ -62,11 +62,13 @@ class ToxicMultilangDataset(Dataset):
             elif isinstance(filenames, list):
                 self.data = pd.concat([pd.read_csv(path / fn, usecols=[self.column.text, self.column.target])
                                        for fn in filenames])
+            self.logger.info(f"Initial train dataset size: {self.data.shape}")
             if resample:
                 data_pos = self.data[self.data[self.column.target] == 1]
                 data_neg = self.data[self.data[self.column.target] == 0].sample(n=data_pos.shape[0])
                 # , random_state=17)
                 self.data = pd.concat([data_pos, data_neg])  # .sample(frac=1)  # shuffle
+                self.logger.info(f"Resampled train dataset size: {self.data.shape}")
         elif kind == "valid":
             self.data = pd.read_csv(path / filenames, usecols=[self.column.text, self.column.target])
         elif kind == "test":

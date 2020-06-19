@@ -37,7 +37,7 @@ def main():
         os.makedirs(logs_dir, exist_ok=True)
         model = DistilBERTClassifier(hparams, mode=hparams.model_mode)
         trainer = pl.Trainer.from_argparse_args(hparams,
-                                                fast_dev_run=True,
+                                                # fast_dev_run=True,
                                                 default_root_dir=logs_dir,
                                                 # weights_save_path=path_output,
                                                 weights_summary=None,
