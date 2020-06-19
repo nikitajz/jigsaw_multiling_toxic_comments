@@ -17,6 +17,8 @@ class ModelArgs:
         default=None, metadata={"help": "Pretrained tokenizer name or path if not the same as model_name"})
     model_mode: str = field(
         default="base", metadata={"help": "Model mode according to HF, e.g. `base`, `language-modeling`"})
+    model_mlm_finetuned: Optional[str] = field(
+        default=None, metadata={"help": "Model finetuned on MLM to use as backbone"})
     freeze_backbone: bool = field(
         default=False, metadata={"help": "Freeze Roberta model and train only classifier"})
     max_len: int = field(

@@ -1,0 +1,31 @@
+{
+  "model_name_or_path": "distilbert-base-multilingual-cased",
+  "config_name": "distilbert-base-multilingual-cased",
+  "tokenizer_name": "distilbert-base-multilingual-cased",
+  "model_mode": "sequence-classification",
+  "model_mlm_finetuned": "data/lang_model/distilbertMLM/model-finetuned/",
+  "output_dir": "data/model/distilbertCF/",
+  "load_checkpoint": false,
+  "max_len": 192,
+  "data_path": "data/",
+  "data_train": [
+    "jigsaw-toxic-comment-train.csv",
+    "jigsaw-unintended-bias-train.csv"
+  ],
+  "data_test": "validation.csv",
+  "resample": true,
+  "shuffle": true,
+  "valid_pct": 0.5,
+  "val_check_interval": 1000,
+  "limit_val_batches": 1.0,
+  "num_workers": 12,
+  "max_epochs": 2,
+  "gpus": 1,
+  "batch_size": 16,
+  "learning_rate": 5e-7,
+  "wandb_enable": true,
+  "early_stop_callback": true,
+  "seed": 42,
+  "do_train": true,
+  "do_test": true
+}
