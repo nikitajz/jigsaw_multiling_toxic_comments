@@ -4,16 +4,16 @@
 
 export TRAIN_FILE=data/mlm_text/test-lm.txt
 export VALID_FILE=data/mlm_text/validation-lm.txt
-export OUTPUT_DIR=data/lang_model
+export OUTPUT_DIR=data/lang_model/hf_xlm-roberta/
 
-python src/run_language_modeling.py \
+python src/run_hf_mlm.py \
   --model_type=xlm-roberta \
   --model_name_or_path=xlm-roberta-base \
   --do_train \
   --train_data_file=$TRAIN_FILE \
   --do_eval \
   --eval_data_file=$VALID_FILE \
-  --output_dir=data/lang_model \
+  --output_dir=$OUTPUT_DIR \
   --cache_dir=".hf_cache" \
   --mlm \
   --line_by_line \

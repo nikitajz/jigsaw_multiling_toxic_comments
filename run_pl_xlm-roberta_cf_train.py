@@ -9,7 +9,7 @@ import pytorch_lightning as pl
 from pytorch_lightning import loggers
 
 from src.config_base import ModelArgs, TrainingArgs
-from src.pl_model import XLMRobertaSeqClassificationPL
+from src.pl_xlmroberta_model import XLMRobertaSeqClassificationPL
 from src.utils import load_or_parse_args
 
 
@@ -38,7 +38,7 @@ def main():
                       loggers.TensorBoardLogger('tb_logs/')]
         model = XLMRobertaSeqClassificationPL(m_args, tr_args)
         trainer = pl.Trainer.from_argparse_args(hparams,
-                                                # fast_dev_run=True,
+                                                fast_dev_run=True,
                                                 default_root_dir=path_output,
                                                 # weights_save_path=path_output,
                                                 weights_summary=None,

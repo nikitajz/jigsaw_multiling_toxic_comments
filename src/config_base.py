@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Optional, Union
+from typing import List, Optional
 
 
 @dataclass
@@ -27,13 +27,13 @@ class ModelArgs:
 class TrainingArgs:
     data_path: str = field(
         default="data/", metadata={"help": "Folder where data located"})
-    data_train: Union[str, List[str]] = field(
+    data_train: List[str] = field(
         default="jigsaw-toxic-comment-train.csv",
         metadata={"help": "Train filename, list of filenames of pattern pathlib.glob"})
-    data_valid: Union[str, List[str]] = field(
+    data_valid: str = field(
         default="validation.csv",
         metadata={"help": "Validation filename, list of filenames of pattern pathlib.glob"})
-    data_test: Union[str, List[str]] = field(
+    data_test: str = field(
         default="test.csv",
         metadata={"help": "Test filename, list of filenames of pattern pathlib.glob"})
     reload_dataloaders_every_epoch: bool = field(
@@ -46,7 +46,7 @@ class TrainingArgs:
         default=1, metadata={"help": "How many workers to use for dataloader"})
     seed: int = field(
         default=42, metadata={"help": "Random number"})
-    gpus: Union[str, int, List[str]] = field(
+    gpus: int = field(
         default=1, metadata={"help": "Device to train model on. Int for number of gpus," +
                                      " str to select specific one or List[str] to select few specific gpus"})
     n_epochs: int = field(
