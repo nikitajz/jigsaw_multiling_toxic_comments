@@ -33,7 +33,7 @@ MODEL_MODES = {
 }
 
 
-class BaseTransformer(pl.LightningModule):
+class DistilBERTMaskedLM(pl.LightningModule):
     def __init__(self, hparams: Namespace, num_labels=None, mode="base", **config_kwargs):
         """Initialize a model."""
 
@@ -58,26 +58,20 @@ class BaseTransformer(pl.LightningModule):
             cache_dir=cache_dir,
         )
         self.train_dataset = None
-        self.valid_dataset = None
+        self.val_dataset = None
         self.collate_fn = None
 
-    def forward(self, input_ids, mlm_labels, **kwargs):
-        outputs = self.model.forward(input_ids=input_ids, masked_lm_labels=mlm_labels)
-        return outputs
+    def forward(self, batch, **kwargs):
+        loss, logits = self.model.forward(input_ids=batch["input_ids"], masked_lm_labels=batch["masked_lm_labels"])
+        return loss
 
     def training_step(self, batch, batch_idx):
-        b_input_ids = batch["input_ids"]
-        b_labels = batch["masked_lm_labels"]
-
-        loss, logits = self(b_input_ids, b_labels)
+        loss = self.forward(batch)
         logs = {'epoch': batch_idx, 'train/train_loss': loss}
         return {'loss': loss, 'log': logs}
 
     def validation_step(self, batch, batch_idx):
-        b_input_ids = batch["input_ids"]
-        b_labels = batch["masked_lm_labels"]
-
-        loss, logits = self(b_input_ids, b_labels)
+        loss = self.forward(batch)
         logs = {'epoch': batch_idx, 'train/val_loss': loss}
         return {'val_loss': loss, 'log': logs}
 
@@ -86,11 +80,13 @@ class BaseTransformer(pl.LightningModule):
         logs = {'val_loss': avg_loss, 'perplexity': torch.exp(avg_loss)}
         return {'val_loss': avg_loss, 'logs': logs, 'progress_bar': logs}
 
-    def test_step(self, batch, batch_nb):
-        return self.validation_step(batch, batch_nb)
+    def test_step(self, batch, batch_idx):
+        loss = self.forward(batch)
+        logs = {'epoch': batch_idx, 'test_loss': loss}
+        return {'test_loss': loss, 'logs': logs}
 
     def test_epoch_end(self, outputs):
-        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        avg_loss = torch.stack([x['test_loss'] for x in outputs]).mean()
         logs = {'test_loss': avg_loss}
         return {'test_loss': avg_loss, 'log': logs}
 
@@ -140,20 +136,19 @@ class BaseTransformer(pl.LightningModule):
         return (len(self.train_dataloader()) // self.hparams.effective_batch_size
                 // self.hparams.accumulate_grad_batches * max(1, self.hparams.min_epochs))
 
-    def prepare_dataset(self):
+    def prepare_data(self):
         dataset = LineByLineTextDataset(tokenizer=self.tokenizer,
                                         file_path=os.path.join(self.hparams.data_path, self.hparams.data_train),
                                         block_size=self.hparams.max_len)
         train_size = int(self.hparams.valid_pct * len(dataset))
         test_size = len(dataset) - train_size
-        self.train_dataset, self.valid_dataset = random_split(dataset, [train_size, test_size])
+        self.train_dataset, self.val_dataset = random_split(dataset, [train_size, test_size])
         mlm_collator = DataCollatorForLanguageModeling(
             tokenizer=self.tokenizer, mlm=self.hparams.mlm, mlm_probability=self.hparams.mlm_probability
         )
         self.collate_fn = mlm_collator.collate_batch
 
     def train_dataloader(self):
-        self.prepare_dataset()
         dataloader = DataLoader(
             self.train_dataset,
             batch_size=self.hparams.batch_size,
@@ -166,7 +161,7 @@ class BaseTransformer(pl.LightningModule):
 
     def val_dataloader(self):
         dataloader = DataLoader(
-            self.valid_dataset,
+            self.val_dataset,
             batch_size=self.hparams.batch_size,
             shuffle=False,
             collate_fn=self.collate_fn,

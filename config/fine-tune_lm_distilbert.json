@@ -3,7 +3,7 @@
   "config_name": "distilbert-base-multilingual-cased",
   "tokenizer_name": "distilbert-base-multilingual-cased",
   "model_mode": "language-modeling",
-  "output_dir": "data/lang_model/distilbert/",
+  "output_dir": "data/lang_model/distilbertMaskedLM/",
   "load_checkpoint": false,
   "max_len": 192,
   "data_path": "data/mlm_text",

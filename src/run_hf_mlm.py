@@ -42,7 +42,7 @@ class ModelArguments:
     model_name_or_path: Optional[str] = field(
         default=None,
         metadata={
-            "help": "The model checkpoint for weights initialization. Leave None if you want to train a model from scratch."
+            "help": "The model checkpoint for weights initialization. Leave None to train a model from scratch."
         },
     )
     model_type: Optional[str] = field(
@@ -90,7 +90,7 @@ class DataTrainingArguments:
         metadata={
             "help": "Optional input sequence length after tokenization."
                     "The training dataset will be truncated in block of this size for training."
-                    "Default to the model max input length for single sentence inputs (take into account special tokens)."
+                    "Default to the model max input length for single sentence inputs (including special tokens)."
         },
     )
     overwrite_cache: bool = field(
@@ -132,7 +132,9 @@ def main():
             and not training_args.overwrite_output_dir
     ):
         raise ValueError(
-            f"Output directory ({training_args.output_dir}) already exists and is not empty. Use --overwrite_output_dir to overcome."
+            "Output directory ({}) already exists and is not empty. Use --overwrite_output_dir to overcome.".format(
+                training_args.output_dir
+            )
         )
 
     # Setup logging
@@ -169,16 +171,17 @@ def main():
         logger.warning("You are instantiating a new config instance from scratch.")
 
     if model_args.tokenizer_name:
-        tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name, cache_dir=model_args.cache_dir,
-                                                  use_fast=True)
+        tokenizer_model_name_or_path = model_args.tokenizer_name
     elif model_args.model_name_or_path:
-        tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path, cache_dir=model_args.cache_dir,
-                                                  use_fast=True)
+        tokenizer_model_name_or_path = model_args.model_name_or_path
     else:
         raise ValueError(
-            "You are instantiating a new tokenizer from scratch. This is not supported, but you can do it from another script, save it,"
-            "and load it from here, using --tokenizer_name"
+            "You are instantiating a new tokenizer from scratch. This is not supported, "
+            "but you can do it from another script, save it, and load it from here, using --tokenizer_name"
         )
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_model_name_or_path,
+                                              cache_dir=model_args.cache_dir,
+                                              use_fast=True)
 
     if model_args.model_name_or_path:
         model = AutoModelWithLMHead.from_pretrained(

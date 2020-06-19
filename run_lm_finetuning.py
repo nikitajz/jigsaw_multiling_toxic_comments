@@ -9,19 +9,15 @@ import pytorch_lightning as pl
 from pytorch_lightning import loggers
 
 from src.config_pl import ModelArgs, TrainArgs
-from src.pl_distilbert_mlm import BaseTransformer, LoggingCallback
+from src.pl_distilbert_mlm import DistilBERTMaskedLM, LoggingCallback
 from src.utils import load_or_parse_args, seed_everything
 
 warnings.filterwarnings('ignore', category=UserWarning)
 
-logger = logging.getLogger(__name__)
-
 
 def main():
+    logger = logging.getLogger(__name__)
     m_args, tr_args = load_or_parse_args((ModelArgs, TrainArgs), verbose=True)
-    # tr_args = load_or_parse_args(TrainArgs, verbose=True)
-    # m_args = load_or_parse_args(ModelArgs, verbose=True)
-
     hparams = Namespace(**dataclasses.asdict(m_args), **dataclasses.asdict(tr_args))
 
     # init model
@@ -37,7 +33,7 @@ def main():
 
     if not hparams.load_checkpoint:
         logger.info("Creating the model and trainer.")
-        model = BaseTransformer(hparams, mode=hparams.model_mode)
+        model = DistilBERTMaskedLM(hparams, mode=hparams.model_mode)
         logs_dir = os.path.join(hparams.output_dir, "pl_logs")
         os.makedirs(logs_dir, exist_ok=True)
 
@@ -59,17 +55,18 @@ def main():
                                                 )
     else:
         logger.info("Loading the model and trainer from checkpoint:", hparams.model_checkpoint_path)
-        model = BaseTransformer.load_from_checkpoint(hparams.model_checkpoint_path)
+        model = DistilBERTMaskedLM.load_from_checkpoint(hparams.model_checkpoint_path)
         trainer = pl.Trainer.resume_from_checkpoint(hparams.model_checkpoint_path)
 
     if hparams.do_train:
         trainer.fit(model)
-        trainer.save_checkpoint(os.path.join(hparams.output_dir, "model.pt"))
-        out = os.path.join(hparams.output_dir, "model-finetuned")
-        os.makedirs(out, exist_ok=True)
-        model.model.save_pretrained(out)
+        trainer.save_checkpoint(os.path.join(hparams.output_dir, "trainer.pt"))
+        out_dir = os.path.join(hparams.output_dir, "model-finetuned")
+        os.makedirs(out_dir, exist_ok=True)
+        model.model.save_pretrained(out_dir)
+        model.tokenizer.save_pretrained(out_dir)
         # https://github.com/huggingface/transformers/issues/5081
-        # model.tokenizer.save_pretrained(out)
+        # model.tokenizer.save_pretrained(out_dir)
 
     if hparams.do_test:
         trainer.test(model)
