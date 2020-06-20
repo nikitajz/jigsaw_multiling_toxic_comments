@@ -254,7 +254,6 @@ def predict_toxic(model, test_loader, device):
             b_input_mask = batch[1].to(device)
 
             logits = model(b_input_ids,
-                           token_type_ids=None,
                            attention_mask=b_input_mask)
             y_pred_l.append(logits[0])
 

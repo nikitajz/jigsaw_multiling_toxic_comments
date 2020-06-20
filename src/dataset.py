@@ -9,13 +9,14 @@ from transformers import AutoTokenizer
 
 
 class TokenizerCollateFn:
-    def __init__(self, max_tokens=512, tokenizer_name="xlm-roberta-base", cache_dir=None):
+    def __init__(self, max_tokens=512, tokenizer_name="xlm-roberta-base", cache_dir=None, target=True):
         self.tokenizer = AutoTokenizer.from_pretrained(
             tokenizer_name,
             cache_dir=cache_dir,
             use_fast=True
         )
         self.max_len = max_tokens
+        self.target = target
 
     def __call__(self, batch):
         tok_output = self.tokenizer.batch_encode_plus([x[0] for x in batch],
@@ -25,8 +26,11 @@ class TokenizerCollateFn:
                                                       return_attention_mask=True,
                                                       return_tensors='pt'
                                                       )
-        labels = torch.tensor([x[1] for x in batch])
-        return tok_output['input_ids'], tok_output['attention_mask'], labels
+        output = (tok_output['input_ids'], tok_output['attention_mask'])
+        if self.target:
+            labels = torch.tensor([x[1] for x in batch])
+            output = output + (labels,)
+        return output
 
 
 class ToxicMultilangDataset(Dataset):
@@ -77,9 +81,10 @@ class ToxicMultilangDataset(Dataset):
             self.data = pd.read_csv(path / filenames, usecols=[self.column.text])  # , self.column.lang
             self.logger.info(f"Test dataset size: {self.data.shape}")
 
-        pos_samples = self.data[self.data[self.column.target] == 1].shape[0]
-        self.logger.info(f"{kind.capitalize()} dataset shape: ({','.join(map(str, self.data.shape))})."
-                         f" Target positive samples ratio: {pos_samples / self.data.shape[0]:3f}")
+        if kind not in ["test"]:
+            pos_samples = self.data[self.data[self.column.target] == 1].shape[0]
+            self.logger.info(f"{kind.capitalize()} dataset shape: ({','.join(map(str, self.data.shape))})."
+                             f" Target positive samples ratio: {pos_samples / self.data.shape[0]:3f}")
 
     def __getitem__(self, idx):
         row = self.data.iloc[idx]
